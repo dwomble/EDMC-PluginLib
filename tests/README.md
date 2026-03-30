@@ -1,4 +1,4 @@
-# BGS-Tally Test Harness
+# Test Harness
 
 This is a unit testing tool for EDMC that mocks up EDMC functionality in order to run pytest unit tests.
 
@@ -16,19 +16,17 @@ Journal records can be loaded from a json file using `load_events()` and then ca
 
 ### Test files
 
-Test files and data live in the `/tests` folder which is where BGS-Tally will look for files by default and, apart from the `/assets` and `/data` folders, it uses test-specific data files from within `/tests`.
+Test files and data live in the `/tests` folder which is where your plugin will look for files by default.
 
 Unit tests exist in files that start `test_`. These import the test harness, initialize it, and define a class (or classes) with functions that pytest will run.
 
-The harness initialization may vary depending on the tests and the plugin. It typically loads BGS-Tally and then calls the BGS-Tally initial load functions just as EDMC would.
+The harness initialization may vary depending on the tests and the plugin. It typically loads the plugin and then calls the initial load functions just as EDMC would.
 
-Prior to loading BGS-Tally it may be desirable to copy a standardized version of a BGS-Tally save file to ensure consistent initial conditions.
-
-It will often load a set of journal events that the test series will require and registers the BGS-Tally `journal_entry` function as the recipient of those events when triggered.
+Prior to loading the plugin it may be desirable to copy a standardized version of any save files to ensure consistent initial conditions.
 
 ### Writing tests
 
-At their most basic a test is just a matter of calling a BGS-Tally function and verifying the result or that the outcome is as expected.
+At their most basic a test is just a matter of calling a plugin function and verifying the result or that the outcome is as expected.
 
 Testing can get quite sophisticated. pytest's monkeypatch capability can intercept individual functions enabling some advanced setup.
 
@@ -54,11 +52,11 @@ This folder is used for test config files including `edmc_config.json` that is u
 
 ### /tests/edmc
 
-This contains live and mock edmc modules used to emulate EDMC so the BGS-Tally can run standalone.
+This contains live and mock edmc modules used to emulate EDMC so the plugin can run standalone.
 
 ### Others
 
-Other folders created by BGS-Tally for saving data will be created in `/tests` to avoid overwriting or corrupting files in the main plugin directory.
+Other folders created by your plugin for saving data will be created in `/tests` to avoid overwriting or corrupting files in the main plugin directory.
 
 ## Tips and Tricks
 
@@ -67,10 +65,6 @@ Other folders created by BGS-Tally for saving data will be created in `/tests` t
 The harness mocks the EDMC config and loads config/edmc_config.json as an initial config.
 
 If you want to use an entirely different config for a specific tests call `load_edmc_config(file)`.
-
-### Other data
-
-It's often desirable to use a consistent configuration for testing. BGS-Tally typically stores these in `otherdata`. This can be achieved by storing a standard version in `config` and copying it to `otherdata` prior to startup e.g.
 
 ```python
    shutil.copy(Path(__file__).parent / "config" / "colonisation.json",  Path(__file__).parent / "otherdata" / "colonisation.json")
@@ -101,7 +95,7 @@ A journal event can be mocked simply by calling your journal handling function b
 It works as follows:
 
 1. Sequences of journal events are loaded from a json file using `load_events`
-1. The BGS-Tally's journal handling function is registered with the harness using `register_journal_handler`
+1. Your plugin's journal handling function is registered with the harness using `register_journal_handler`
 1. A test can then fire individual events with `fire_event` or replay an entire sequence with `play_sequence`
 
 Events fired this way will be given a current timestamp and the json event file can contain f strings enabling variable data or specific timing.
