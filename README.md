@@ -8,7 +8,7 @@ A Library of utilities for EDMC plugins and an EDMC headless test harness. Some 
 
 A unit testing tool for EDMC that mocks up EDMC functionality in order to run `pytest` unit tests.
 
-### Features
+*Features*
 
 * A read and writable mock EDMC config object
 * Replacing journal events with customization
