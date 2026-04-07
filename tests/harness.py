@@ -4,6 +4,7 @@ Test harness for EDMC plugins.
 This harness simulates EDMC's journal entry events and provides tools to test
 the plugin's routing functionality without running the full EDMC application.
 """
+import shutil
 import threading
 threading.get_native_id = lambda: 0
 
@@ -29,6 +30,31 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 test_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(test_dir))
 
+CONFIG_FILES:dict = {
+    'Backpack': 'Backpack.json',
+    'Cargo': 'Cargo.json',
+    'Market': 'Market.json',
+    'ModuleInfo': 'ModulesInfo.json',
+    'NavRouteClear': 'NavRoute.json',
+    'Outfitting': 'Outfitting.json',
+    'ShipLocker': 'ShipLocker.json',
+    'Shipyard': 'Shipyard.json',
+    'Status': 'Status.json'
+}
+
+STARTUP_ATTRS:dict = {
+    'StarSystem': 'SystemName',
+    'StarPos': 'StarPos',
+    'SystemAddress': 'SystemAddress',
+    'Population': 'SystemPopulation',
+    'Body': 'Body',
+    'BodyID': 'BodyID',
+    'BodyType': 'BodyType',
+    'MarketID': 'MarketID',
+    'StationName': 'StationName',
+    'StationType': 'StationType'
+}
+
 import tests.edmc.requests
 import tests.edmc.mocks
 from tests.edmc.mocks import MockConfig
@@ -53,7 +79,14 @@ class TestHarness:
         self.plugin_dir:Path = Path(plugin_dir).resolve()
         self.plugin:Any = None
 
+        # Copy the initial config state files
+        Path(__file__).parent.joinpath("journal_folder").mkdir(exist_ok=True)
+        for file in CONFIG_FILES.values():
+            shutil.copy(Path(__file__).parent / "journal_config" / file,
+                Path(__file__).parent / "journal_folder" / file)
+
         self.monitor = monitor
+        self.unhandled_exceptions:list[str] = []
 
         # Event handlers registered by plugins
         self.journal_handlers: list[Callable] = []
@@ -61,6 +94,10 @@ class TestHarness:
         self.set_edmc_config() # Load config data into the mock config object
         self.events:Dict[str, list] = {}
         self.set_requests_mode(live_requests)
+
+        if not hasattr(self, '_original_threading_excepthook'):
+            self._original_threading_excepthook = threading.excepthook
+        threading.excepthook = self._capture_thread_exception
 
         os.environ['EDMC_NO_UI'] = '1'
 
@@ -74,6 +111,27 @@ class TestHarness:
             print(f"Failed to create Tk root: {e}")
 
         self._initialized = True
+
+    def _capture_thread_exception(self, args: threading.ExceptHookArgs) -> None:
+        """Record unhandled worker-thread exceptions so tests can fail deterministically."""
+        exc_type = getattr(args.exc_type, '__name__', str(args.exc_type))
+        thread_name = getattr(args.thread, 'name', '<unknown>')
+        self.unhandled_exceptions.append(f"{thread_name}: {exc_type}: {args.exc_value}")
+
+        if hasattr(self, '_original_threading_excepthook') and self._original_threading_excepthook:
+            self._original_threading_excepthook(args)
+
+    def assert_no_unhandled_exceptions(self) -> None:
+        """Fail the current test if any unhandled thread exceptions were captured."""
+        if not self.unhandled_exceptions:
+            return
+
+        failures = "\n".join(f"- {item}" for item in self.unhandled_exceptions)
+        self.unhandled_exceptions.clear()
+        raise AssertionError(
+            "Unhandled exception(s) were raised by background thread(s):\n"
+            f"{failures}"
+        )
 
     def set_requests_mode(self, live_requests:bool) -> None:
         self.live_requests = live_requests
@@ -133,7 +191,7 @@ class TestHarness:
     def load_events(self, source:str) -> dict:
         """ Load journal events from events.json file. """
 
-        events_file = Path(self.plugin_dir, "config", source)
+        events_file = Path(self.plugin_dir, "journal_config", source)
         logging.info(f"Events file: {events_file}")
         if not events_file.exists():
             print(f" Events file {events_file} not found")
@@ -161,7 +219,6 @@ class TestHarness:
                                 event[k1] = int(event[k1])
                         lines.append(event)
                     res[sequence] = lines
-            print(res)
             self.events = res
             return res
 
@@ -172,20 +229,37 @@ class TestHarness:
     def register_journal_handler(self, handler: Callable, commander:str, system:str, is_beta:bool) -> None:
         """ Register a journal event handler (simulates journal_entry callback). """
         self.journal_handlers.append(handler)
-        self.commander = commander
-        self.system = system
-        self.is_beta = is_beta
+        self.monitor.cmdr = commander
+        self.monitor.state['SystemName'] = system
+        self.monitor.is_beta = is_beta
 
     def fire_event(self, event:dict, state:dict = {}) -> None:
         """ Fire a journal event through the harness. """
 
+        print(f"Firing event: {event['event']}")
         # Update monitor state with provided state data before firing the event
-        for k, v in state.items():
-            self.monitor.state[k] = v
+        self.monitor.state.update(state)
         # Add a timestamp if not provided.
         if 'timestamp' not in event:
             event['timestamp'] = datetime.now(timezone.utc).isoformat()
-        self.monitor.parse_entry(json.dumps(event).encode("utf-8"))
+
+        # Do the opposite of what EDMC does with a startup event. i.e. update monitor fron the faux event rather than create a faux event from the monitor state.
+        if event['event'] == 'Startup':
+            for k, v in STARTUP_ATTRS.items():
+                if k in event:
+                    self.monitor.state[v] = event[k]
+            if 'stationName' in event:
+                self.monitor.state['Docked'] = True
+        else:
+            self.monitor.parse_entry(json.dumps(event).encode("utf-8"))
+
+        # Update the separate journal files that ED maintains
+        # @TODO: Figure out what gets written to NavRoute.json.
+        if event['event'] in CONFIG_FILES.keys():
+            if event['event'] == 'Market' and 'Items' not in event:
+                event['Items'] = [] # Just add an empty market since we can't produce one.
+            with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']], 'w') as f:
+                json.dump(event, f)
 
         # Call registered handlers
         for handler in self.journal_handlers:
@@ -196,7 +270,7 @@ class TestHarness:
                     system=self.monitor.state['SystemName'],
                     station=self.monitor.state['StationName'],
                     entry=event,
-                    state=state
+                    state=self.monitor.state
                 )
             except Exception as e:
                 print(f"Error in journal handler: {e}")

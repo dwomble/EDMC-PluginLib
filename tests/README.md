@@ -50,6 +50,10 @@ The test environment is entirely contained within the `/tests` directory.
 
 This folder is used for test config files including `edmc_config.json` that is used to store EDMC config items, `journal_events.json` used to store journal events that can be replayed and test configuration files.
 
+### /tests/journal_config
+
+This folder is used for test journal files including journal event files that can be replayed and test configuration files for `Cargo.json`, `Status.json` etc..
+
 ### /tests/edmc
 
 This contains live and mock edmc modules used to emulate EDMC so the plugin can run standalone.

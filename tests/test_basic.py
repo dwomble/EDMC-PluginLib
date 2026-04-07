@@ -1,5 +1,5 @@
 """
-Test suite for BGS-Tally plugin using pytest.
+Test suite for and EDMC plugin using pytest.
 
 Run with: .venv/bin/python -m pytest tests/test_plugin.py -v --tb=short 2>&1 | tail -30
 Run with: .venv_win\\Scripts\\python.exe -m pytest tests\\test_plugin.py -v --tb=short
