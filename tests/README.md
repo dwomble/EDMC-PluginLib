@@ -12,7 +12,13 @@ The `harness.py` does the initialization of EDMC. It uses some actual EDMC modul
 
 The harness provides a mock edmc config object loaded from `config/edmc_config.ini` and a journal event replay capability.
 
-Journal records can be loaded from a json or log file using `load_events()` and then called individually with `fire_event` or in sequence with `play_sequence`. The journal record processing supports f strings and time deltas so that they can be customized/maintained without continual editing.
+Journal records can be loaded from a json or log file using `load_events` and then called individually with `fire_event` or in sequence with `play_sequence`. The journal record processing supports f strings and time deltas so that they can be customized/maintained without continual editing.
+
+```python
+load_events(source:str, **kwargs) -> dict[str, list[dict]]:
+fire_event(event:dict, state:dict = {}) -> None:
+play_sequence(name:str, delay:float = 0.5, state:dict = {}) -> None:
+```
 
 ### Test files
 

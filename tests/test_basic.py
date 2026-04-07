@@ -14,7 +14,7 @@ from unittest.mock import patch
 from harness import TestHarness
 
 @pytest.fixture
-def harness(request) -> Generator:
+def harness(request) -> Generator[TestHarness, None, None]:
     """ Provide a fresh test harness for each test. """
     live = request.node.get_closest_marker('live_requests') is not None
 
@@ -35,8 +35,9 @@ def harness(request) -> Generator:
 
 class TestStartup:
     """Test plugin startup behavior."""
+
     @pytest.mark.live_requests
-    def test_harness_initialization(self, harness) -> None:
+    def test_harness_initialization(self, harness:TestHarness) -> None:
         """Test basic harness initialization."""
         assert harness is not None
         assert harness.config.get_str('Plugin_status', default='On') == 'Yes'

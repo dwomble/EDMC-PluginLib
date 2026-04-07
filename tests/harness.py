@@ -191,7 +191,7 @@ class TestHarness:
             logging.warning(f"Warning: Could not load {state_file}: {e}")
             return {}
 
-    def load_events(self, source:str, **kwargs) -> dict:
+    def load_events(self, source:str, **kwargs) -> dict[str, list[dict]]:
         """ Load journal events from a json file or a direct ED log. """
 
         events_file = Path(self.plugin_dir, "journal_config", source)
@@ -203,15 +203,15 @@ class TestHarness:
         try:
             with open(events_file, 'r') as f:
                 if events_file.suffix == '.json':
-                    tmp:dict = json.load(f)
+                    tmp:dict[str, list[dict]] = json.load(f)
                 else:
                     # Assume it's a direct ED log
-                    tmp = {"default": [json.loads(line) for line in f.readlines()]}
+                    tmp:dict[str, list[dict]] = {"default": [json.loads(line) for line in f.readlines()]}
 
                 # The following allows the use of f strings in the json which enables time-based events.
-                res:dict = {}
+                res:dict[str, list[dict]] = {}
                 for sequence, elements in tmp.items():
-                    lines:list = []
+                    lines:list[dict] = []
                     for line in elements:
                         event:dict = {}
                         for k1, v1 in line.items():
