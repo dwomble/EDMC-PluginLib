@@ -23,6 +23,8 @@ Please be gentle. This is a work in progress and not all EDMC or tool functional
 1. Run the initialization test to confirm your plugin works
 1. Start writing and running tests
 
+If, like me, you work best from example the following plugins use the harness: [Neutron Dancer](https://github.com/dwomble/EDMC-NeutronDancer), [BGS-Tally](https://github.com/aussig/BGS-Tally/tree/feature/Issue-454/test-harness), and [EDMC Mining Analytics](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics).
+
 ## Components
 
 ### Harness
