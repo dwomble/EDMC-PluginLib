@@ -144,13 +144,13 @@ class TestHarness:
         config_path:Path = self.plugin_dir / "config" / config_file
         if not config_path.is_file():
             self.config.data = {}
-            logging.error(f"Warning: edmc's config file not found {config_path}")
+            logging.warning(f"Warning: edmc's config file not found {config_path}")
             return
         try:
             with open(config_path, 'r') as f:
                 self.config.data = json.load(f)
         except Exception as e:
-            logging.error(f"Warning: Could not load edmc config file {config_path}: {e}")
+            logging.warning(f"Warning: Could not load edmc config file {config_path}: {e}")
         self.config.data['app_dir_path'] = str(self.plugin_dir) # Override app_dir_path to plugin dir for testing purposes
 
     def get_config_data(self, config_file:str) -> str|dict|None:
