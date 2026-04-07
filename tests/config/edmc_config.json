@@ -1,7 +1,8 @@
 {
     "loglevel": "DEBUG",
+    "ui_scale": 100,
     "theme" : 0,
     "overlay": {},
     "Plugin_status": "Yes",
-    "Plygin_config_item": "Test"
+    "Plugin_config_item": "Test"
 }
