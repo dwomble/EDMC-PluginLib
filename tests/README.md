@@ -1,8 +1,27 @@
 # EDMC Plugin Test Harness
 
-This is a unit testing tool for EDMC that mocks up EDMC functionality in order to run pytest unit tests.
+This is a unit testing tool for EDMC plugins that mocks up EDMC functionality in order to run `pytest` unit tests in a headless environment without modifying the plugin.
 
-This is a work in progress Not all EDMC or tool functionality is mocked up yet.
+## Features
+
+* Journal event replay, with customization
+* Mock state handling
+* Mock EDMC config
+* Mock ED logging
+* Mock i10n translation
+* Mock CAPI event handling
+* Mock EDMC Overlay
+* Mock (or live) HTTPS requests
+
+Please be gentle. This is a work in progress and not all EDMC or tool functionality is mocked up yet.
+
+## Getting Started
+
+1. Extract the code into a `tests` folder within your plugin directory
+1. Create a venv and install the dependencies
+1. Edit `tests_basic.py` to match your plugin's startup and configuration needs
+1. Run the initialization test to confirm your plugin works
+1. Start writing and running tests
 
 ## Components
 
