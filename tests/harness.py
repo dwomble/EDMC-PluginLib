@@ -58,8 +58,7 @@ STARTUP_ATTRS:dict = {
 }
 
 import tests.edmc.requests
-import tests.edmc.mocks
-from tests.edmc.mocks import MockConfig
+import tests.edmc.mocks as mocks
 from tests.edmc.monitor import monitor
 class TestHarness:
     """ Main test harness. """
@@ -92,7 +91,7 @@ class TestHarness:
 
         # Event handlers registered by plugins
         self.journal_handlers: list[Callable] = []
-        self.config = MockConfig()
+        self.config = mocks.MockConfig()
         self.set_edmc_config() # Load config data into the mock config object
         self.events:Dict[str, list] = {}
         self.set_requests_mode(live_requests)
@@ -271,7 +270,7 @@ class TestHarness:
             for k, v in STARTUP_ATTRS.items():
                 if k in event:
                     self.monitor.state[v] = event[k]
-            if 'stationName' in event:
+            if 'StationName' in event:
                 self.monitor.state['Docked'] = True
         else:
             self.monitor.parse_entry(json.dumps(event).encode("utf-8"))
