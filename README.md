@@ -6,17 +6,19 @@ A Library of utilities for EDMC plugins and an EDMC headless test harness. Some 
 
 ## tests
 
-A unit testing tool for EDMC that mocks up EDMC functionality in order to run `pytest` unit tests.
+A unit testing tool for EDMC that mocks up EDMC functionality in order to run `pytest` unit tests, use the python debugger, and `pycov` test coverage analysis.
 
 *Features*
 
-* A read and writable mock EDMC config object
-* Replacing journal events with customization
+* Replay journal events with customization
 * Mock (or live) HTTPS requests
+* A read and writable mock EDMC config object
+* Mock state handling
+* Mock CAPI event handling
 * A mock overlay
 * Mock localization functions
 
-This is a work in progress. Not all EDMC or tool functionality is mocked up yet and it may take a little effort to get it working with your plugin.
+This is a work in progress, not all EDMC or tool functionality is mocked up yet and it may take a little effort to get it working with your plugin, but it does work with some quite complex plugins that use a wide range of EDMC features.
 
 But if you want to run unit tests, replay ED logs, or run your plugin with a debugger it may be worth it.
 
