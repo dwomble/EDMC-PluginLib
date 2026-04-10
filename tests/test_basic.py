@@ -22,8 +22,7 @@ def harness(request) -> Generator[TestHarness, None, None]:
 
     # Now we can import our plugin modules
     from load import plugin_start3, plugin_app, journal_entry
-    from my_plugin import me
-    test_harness.plugin = me
+
 
     plugin_start3(str(test_harness.plugin_dir))
     plugin_app(test_harness.parent)
@@ -40,4 +39,4 @@ class TestStartup:
     def test_harness_initialization(self, harness:TestHarness) -> None:
         """Test basic harness initialization."""
         assert harness is not None
-        assert harness.config.get_str('Plugin_status', default='On') == 'Yes'
+        assert harness.config.get_str('DummyPlugin_status', default='Disabled') == 'Active'
