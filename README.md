@@ -6,8 +6,8 @@ Bringing EDMC plugin development out of the dark ages.
 
 A unit testing tool for EDMC that mocks up EDMC functionality in order to run `pytest` unit tests, use the python debugger, and `pycov` test coverage analysis.
 
-<img width="158" height="371" alt="Screenshot 2026-04-10 180114" src="https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f" />
-<img width="595" height="290" alt="Screenshot 2026-04-10 180309" src="https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f" />
+<img width="158" height="371" alt="Code test coverage" src="https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f" />
+<img width="595" height="290" alt="Debugging a plugin" src="https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f" />
 
 *Features*
 
