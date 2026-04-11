@@ -1,5 +1,6 @@
 {
     "startup": [
+       { "event":"LoadGame", "FID":"F11111111", "Commander":"Testy", "Horizons":true, "Odyssey":true, "Ship":"PantherMkII", "Ship_Localised":"Panther Clipper Mk II", "ShipID":106, "ShipName":"Test", "ShipIdent":"DW-23P", "FuelLevel":128.000000, "FuelCapacity":128.000000, "GameMode":"Open", "Credits":10000009, "Loan":0, "language":"English/UK", "gameversion":"4.3.1.0", "build":"r324607/r0 " },
         { "event":"Fileheader", "part":1, "language":"English/UK", "Odyssey":true, "gameversion":"4.3.1.0", "build":"r324607/r0 " },
         { "event":"Startup", "StarSystem":"Bleae Thua ED-D c12-5", "SystemAddress":1458040738922, "StarPos":[-131.46875,4.18750,2019.68750],"Body":"Bleae Thua ED-D c12-5", "BodyID":0 },
         { "event":"Commander", "FID":"F11111111", "Name":"Someone" }
@@ -15,5 +16,12 @@
         { "event":"SupercruiseDestinationDrop", "Type":"[CLB] SV Booze Cruise T9M-33M", "Threat":0, "MarketID":3709409280 },
         { "event":"SupercruiseExit", "Taxi":false, "Multicrew":false, "StarSystem":"Bleae Thua ED-D c12-5", "SystemAddress":1458040738922, "Body":"Bleae Thua ED-D c12-5 8 b", "BodyID":22, "BodyType":"Planet" },
         { "event":"NavBeaconScan", "SystemAddress":1458040738922, "NumBodies":46 }
+    ],
+    "cargo": [
+        { "event":"MarketBuy", "MarketID":3709409280, "Type":"steel", "Count":1298, "BuyPrice":4179, "TotalCost":5424342 },
+        { "timestamp":"2026-04-10T23:11:22Z", "event":"Cargo", "Vessel":"Ship", "Count":1298 }
+    ],
+    "state": [
+        { "event":"Music", "MusicTrack":"Supercruise" }
     ]
 }

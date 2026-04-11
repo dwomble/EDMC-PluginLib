@@ -4,6 +4,10 @@ Test suite for and EDMC plugin using pytest.
 Run with: .venv/bin/python -m pytest tests/test_plugin.py -v --tb=short 2>&1 | tail -30
 Run with: .venv_win\\Scripts\\python.exe -m pytest tests\\test_plugin.py -v --tb=short
 """
+from pathlib import Path
+
+from zipfile import Path
+
 import pytest
 from typing import Generator
 from time import sleep
@@ -76,6 +80,13 @@ class TestStartup:
         response = requests.get('https://testy.com/file.txt')
         assert response.status_code == 200
 
+    def test_load_state(self, harness:TestHarness) -> None:
+        """Test that state files are loaded correctly."""
+        state_data = harness.load_state('state_test.json')
+        assert state_data is not None
+        assert harness.monitor.state['Credits'] == 111111
+
+
     @pytest.mark.live_requests
     def test_live_requests(self, harness:TestHarness) -> None:
         """Test that live requests work."""
@@ -112,3 +123,25 @@ class TestStartup:
         assert journal.is_beta == False
         assert journal.system == "Bleae Thua ED-D c12-5"
         assert journal.entry['event'] == "NavBeaconScan"
+
+    def test_cargo_event(self, harness) -> None:
+        """ Test cargo events. """
+        harness.load_events("journal_events.json")
+        harness.play_sequence("cargo", 0.1)
+        assert harness.monitor.state['Cargo']['steel'] == 1298
+
+        with open(str(harness.plugin_dir / "journal_folder" / "Cargo.json"), 'r') as file:
+            content = file.read()
+
+        assert content == '{"event": "Cargo", "Vessel": "Ship", "Count": 1298, "Inventory": [{"Name": "steel", "Count": 1298, "Stolen": false}]}'
+
+    def test_pass_state(self, harness:TestHarness) -> None:
+        """Test initializing config from a json file."""
+        config_data:dict = harness.get_config_data('state_test.json')
+        assert config_data is not None
+        harness.play_sequence("state", 0.1, config_data)
+        assert harness.monitor.state['Credits'] == 111111
+        assert harness.monitor.state['GameBuild'] == "r324607/r0 "
+        assert harness.monitor.state['Captain'] == "Testy"
+        assert harness.monitor.state['Horizons'] == True
+        assert harness.monitor.state['Odyssey'] == True

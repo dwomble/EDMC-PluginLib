@@ -87,6 +87,7 @@ class TestHarness:
                 Path(__file__).parent / "journal_folder" / file)
         monitor.currentdir = str(Path(__file__).parent / "journal_folder")
         self.monitor = monitor
+        self.monitor.state['Credits'] = 1000000
         self.unhandled_exceptions:list[str] = []
 
         # Event handlers registered by plugins
@@ -164,13 +165,13 @@ class TestHarness:
         self.config.data['outdir'] = str(self.plugin_dir) # Override outdir path
         logging.info(f"Config data: {self.config.data}")
 
-    def get_config_data(self, config_file:str) -> str|dict|None:
+    def get_config_data(self, config_file:str) -> dict:
         """Read and return a chosen config file. Useful for comparing plugin output to expected config data."""
 
         config_path:Path = self.plugin_dir / "config" / config_file
         format = config_file.split('.')[1]
         if not config_path.is_file():
-            return
+            return {}
         try:
             with config_path.open('rb') as f:
                 match format:
@@ -183,12 +184,13 @@ class TestHarness:
                         return json.load(f)
                     case 'csv':
                         #@TODO: Add csv support
-                        return None
+                        return {}
                     case _:
-                        return f.read().decode('utf-8')
+                        logging.warning(f"Warning: Unsupported config file format: {format}")
+                        return {}
         except Exception as e:
             logging.warning(f"Warning: Could not load {format} config file {config_path}: {e}")
-            return
+            return {}
 
     def load_state(self, source:str) -> dict:
         """ Load monitor state from a json file. """
@@ -310,6 +312,7 @@ class TestHarness:
                 if not cargo:
                     with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'], 'r') as f:
                         cargo = json.load(f)
+                cargo['Inventory'] = cargo.get('Inventory', [])
 
                 match event['event']:
                     case 'CargoTransfer':
@@ -336,6 +339,7 @@ class TestHarness:
                         if 'Inventory' not in cargo: cargo['Inventory'] = []
 
                 cargo['Inventory'] = self.monitor.coalesce_cargo(cargo['Inventory'])
+                cargo['Count'] = sum(item['Count'] for item in cargo['Inventory'])
 
                 with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'], 'w') as f:
                     json.dump(cargo, f)
