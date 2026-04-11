@@ -19,6 +19,7 @@ class plugin:
     parent:tk.Frame|None = None
     frame:tk.Frame|None = None
     closing:bool = False
+
 @dataclass
 class dashboard:
     cmdr:str = ""
@@ -26,6 +27,7 @@ class dashboard:
     entry:Dict[str, int] = field(default_factory=dict)
     parent:tk.Frame|None = None
     frame:tk.Frame|None = None
+
 @dataclass
 class journal:
     cmdr:str = ""
@@ -37,7 +39,7 @@ class journal:
 
 @dataclass
 class carrier:
-    data:CAPIData|None = None
+    data:CAPIData
 
 def plugin_start3(plugin_dir):
     """ Load this plugin into EDMC """
@@ -83,4 +85,5 @@ def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
 
 def capi_fleetcarrier(data:CAPIData):
     """ Handle Fleet carrier data """
+    global carrier
     carrier.data = data

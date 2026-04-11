@@ -261,6 +261,10 @@ class TestHarness:
 
         # Update monitor state with provided state data before firing the event
         self.monitor.state.update(state)
+        self.monitor.state['Credits'] = state.get('Credits', self.monitor.state.get('Credits', 1000000))
+
+        self._update_journal_files(event, state)
+
         # Add a timestamp if not provided.
         if 'timestamp' not in event:
             event['timestamp'] = datetime.now(timezone.utc).isoformat()
@@ -274,17 +278,6 @@ class TestHarness:
                 self.monitor.state['Docked'] = True
         else:
             self.monitor.parse_entry(json.dumps(event).encode("utf-8"))
-
-        # Update the separate journal files that ED maintains
-        if event['event'] in CONFIG_FILES.keys():
-            match event['event']:
-                case 'Market' if 'Items' not in event:
-                    event['Items'] = [] # Just add an empty market since we can't produce one.
-                case 'NavRoute' if 'Route' not in event:
-                    event['Route'] = [] # Just add an empty route since we can't produce one.
-
-            with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']], 'w') as f:
-                json.dump(event, f)
 
         # Call registered handler(s)
         for handler in self.journal_handlers:
@@ -307,3 +300,52 @@ class TestHarness:
             self.fire_event(event, state=state)
             state = {}  # Clear state after the first event
             sleep(delay)
+
+    def _update_journal_files(self, event:dict, state:dict = {}) -> None:
+        """ Simulate EDMC's journal file updates based on the event type. """
+        # Update the separate journal files that ED maintains
+        match event['event']:
+            case 'Cargo' | 'MarketBuy' | 'MarketSell' | 'CargoTransfer' | 'CollectCargo' | 'EjectCargo' | 'MiningRefined' | 'LaunchDrone':
+                cargo:dict = state.get('Cargo', {})
+                if not cargo:
+                    with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'], 'r') as f:
+                        cargo = json.load(f)
+
+                match event['event']:
+                    case 'CargoTransfer':
+                        for item in event.get('Transfers', []):
+                            cargo['Inventory'].append({
+                                'Name': self.monitor.canonicalise(item['Name']),
+                                'Count': item['Count'] if item.get('Direction') == "toship" else -item['Count'],
+                                'Stolen': item.get('Stolen', False)
+                            })
+                    case 'MarketBuy' | 'MarketSell' | 'CollectCargo' | 'EjectCargo' | 'MiningRefined':
+                        cargo['Inventory'].append({
+                            'Name': self.monitor.canonicalise(event['Type']),
+                            'Count': event['Count'] if event['event'] in ['MarketBuy', 'CollectCargo'] else -event['Count'],
+                            'Stolen': event.get('Stolen', False)
+                        })
+                    case 'LaunchDrone':
+                        cargo['Inventory'].append({
+                            'Name': "drone",
+                            'Count': -1,
+                            'Stolen': False
+                        })
+                    case 'Cargo' if 'Cargo' in state:
+                        cargo = state['Cargo']
+                        if 'Inventory' not in cargo: cargo['Inventory'] = []
+
+                cargo['Inventory'] = self.monitor.coalesce_cargo(cargo['Inventory'])
+
+                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'], 'w') as f:
+                    json.dump(cargo, f)
+
+            case _ if event['event'] in CONFIG_FILES.keys():
+                match event['event']:
+                    case 'Market' if 'Items' not in event:
+                        event['Items'] = [] # Just add an empty market since we can't produce one.
+                    case 'NavRoute' if 'Route' not in event:
+                        event['Route'] = [] # Just add an empty route since we can't produce one.
+
+                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']], 'w') as f:
+                    json.dump(event, f)
