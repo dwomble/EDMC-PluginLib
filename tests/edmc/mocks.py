@@ -74,7 +74,7 @@ def appversion() -> semantic_version.Version:
 
 _cfg_attrs = {
     'appname': 'EDMC',
-    'appversion': appversion(),
+    'appversion': appversion,
     'appcmdname': 'EDMC',
     'app_dir_path': parent,
     'default_journal_dir': parent / "journal_folder",

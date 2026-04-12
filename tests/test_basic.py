@@ -43,8 +43,8 @@ def harness(request) -> Generator[TestHarness, None, None]:
 
     yield test_harness
 
-class TestStartup:
-    """Test plugin startup behavior."""
+class TestBasicFeatures:
+    """Test basic harness features."""
 
     def test_harness_initialization(self, harness:TestHarness) -> None:
         """Test basic harness initialization."""
