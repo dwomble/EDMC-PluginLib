@@ -212,3 +212,4 @@ __marimo__/
 tests/logs/
 tests/backups/
 tests/updates/
+tests/journal_folder/

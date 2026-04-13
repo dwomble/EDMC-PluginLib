@@ -239,7 +239,10 @@ class TestHarness:
                             if isinstance(v1, str) and v1.startswith("now:"):
                                 event[k1] = datetime.now(timezone.utc).isoformat()
                             if isinstance(v1, str) and '{' in v1 and '}' in v1:
-                                event[k1] = eval("f'" + v1 + "'")
+                                try:
+                                    event[k1] = eval("f'" + v1 + "'")
+                                except Exception as e:
+                                    logging.warning(f"Warning: Could not evaluate f-string {v1}: {e}")
                             if isinstance(event[k1], str) and event[k1].isnumeric():
                                 event[k1] = int(event[k1])
                         lines.append(event)
@@ -319,20 +322,23 @@ class TestHarness:
                         for item in event.get('Transfers', []):
                             cargo['Inventory'].append({
                                 'Name': self.monitor.canonicalise(item['Name']),
+                                'Name_Localised': item.get('Name_Localised', self.monitor.canonicalise(item['Name'])),
                                 'Count': item['Count'] if item.get('Direction') == "toship" else -item['Count'],
-                                'Stolen': item.get('Stolen', False)
+                                'Stolen': item.get('Stolen', 0)
                             })
                     case 'MarketBuy' | 'MarketSell' | 'CollectCargo' | 'EjectCargo' | 'MiningRefined':
                         cargo['Inventory'].append({
                             'Name': self.monitor.canonicalise(event['Type']),
+                            'Name_Localised': event.get('Type_Localised', self.monitor.canonicalise(event['Type'])),
                             'Count': event['Count'] if event['event'] in ['MarketBuy', 'CollectCargo'] else -event['Count'],
-                            'Stolen': event.get('Stolen', False)
+                            'Stolen': event.get('Stolen', 0)
                         })
                     case 'LaunchDrone':
                         cargo['Inventory'].append({
                             'Name': "drone",
+                            'Name_Localised': "Drone",
                             'Count': -1,
-                            'Stolen': False
+                            'Stolen': 0
                         })
                     case 'Cargo' if 'Cargo' in state:
                         cargo = state['Cargo']
@@ -343,6 +349,13 @@ class TestHarness:
 
                 with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'][0], 'w') as f:
                     json.dump(cargo, f)
+
+            case 'Loadout':
+                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['ModuleInfo'], 'r') as f:
+                    modules = json.load(f)
+                modules['Modules'] = event.get('Modules', [])
+                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['ModuleInfo'], 'w') as f:
+                    json.dump(modules, f)
 
             case _ if event['event'] in CONFIG_FILES.keys():
                 # Add empty elements where we're unable to infer them.
