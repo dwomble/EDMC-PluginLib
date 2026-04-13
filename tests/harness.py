@@ -33,15 +33,15 @@ test_dir:Path = Path(__file__).parent
 sys.path.insert(0, str(test_dir))
 
 CONFIG_FILES:dict = {
-    'Backpack': 'Backpack.json',
-    'Cargo': 'Cargo.json',
-    'Market': 'Market.json',
-    'ModuleInfo': 'ModulesInfo.json',
-    'NavRouteClear': 'NavRoute.json',
-    'Outfitting': 'Outfitting.json',
-    'ShipLocker': 'ShipLocker.json',
-    'Shipyard': 'Shipyard.json',
-    'Status': 'Status.json'
+    'Backpack': ('Backpack.json', "Items"),
+    'Cargo': ('Cargo.json', "Inventory"),
+    'Market': ('Market.json', "Items"),
+    'ModuleInfo': ('ModulesInfo.json', "Modules"),
+    'NavRouteClear': ('NavRoute.json', 'Route'),
+    'Outfitting': ('Outfitting.json', 'Items'),
+    'ShipLocker': ('ShipLocker.json', 'Items'),
+    'Shipyard': ('Shipyard.json', 'Pricelist'),
+    'Status': ('Status.json', '')
 }
 
 STARTUP_ATTRS:dict = {
@@ -82,7 +82,7 @@ class TestHarness:
 
         # Copy the initial config state files
         Path(__file__).parent.joinpath("journal_folder").mkdir(exist_ok=True)
-        for file in CONFIG_FILES.values():
+        for (file, key) in CONFIG_FILES.values():
             shutil.copy(Path(__file__).parent / "journal_config" / file,
                 Path(__file__).parent / "journal_folder" / file)
         monitor.currentdir = str(Path(__file__).parent / "journal_folder")
@@ -310,7 +310,7 @@ class TestHarness:
             case 'Cargo' | 'MarketBuy' | 'MarketSell' | 'CargoTransfer' | 'CollectCargo' | 'EjectCargo' | 'MiningRefined' | 'LaunchDrone':
                 cargo:dict = state.get('Cargo', {})
                 if not cargo:
-                    with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'], 'r') as f:
+                    with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'][0], 'r') as f:
                         cargo = json.load(f)
                 cargo['Inventory'] = cargo.get('Inventory', [])
 
@@ -341,15 +341,12 @@ class TestHarness:
                 cargo['Inventory'] = self.monitor.coalesce_cargo(cargo['Inventory'])
                 cargo['Count'] = sum(item['Count'] for item in cargo['Inventory'])
 
-                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'], 'w') as f:
+                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'][0], 'w') as f:
                     json.dump(cargo, f)
 
             case _ if event['event'] in CONFIG_FILES.keys():
-                match event['event']:
-                    case 'Market' if 'Items' not in event:
-                        event['Items'] = [] # Just add an empty market since we can't produce one.
-                    case 'NavRoute' if 'Route' not in event:
-                        event['Route'] = [] # Just add an empty route since we can't produce one.
-
+                # Add empty elements where we're unable to infer them.
+                if CONFIG_FILES[event['event']][1] and CONFIG_FILES[event['event']][1] not in event:
+                     event[CONFIG_FILES[event['event']][1]] = state.get(CONFIG_FILES[event['event']][1], [])
                 with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']], 'w') as f:
                     json.dump(event, f)

@@ -1,1 +1,1 @@
-{"event": "Cargo", "Vessel": "Ship", "Count": 1298, "Inventory": [{"Name": "steel", "Count": 1298, "Stolen": false}]}
+{ "event":"Cargo", "Vessel":"Ship", "Count":0, "Inventory":[] }
