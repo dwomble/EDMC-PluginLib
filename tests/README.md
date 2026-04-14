@@ -81,11 +81,13 @@ This folder is used for test configuration files including `edmc_config.json` th
 
 ### /tests/journal_config
 
-This folder is used for test journal files including journal event files that can be replayed and test configuration files for `Cargo.json`, `Status.json` etc..
+This folder is used for test journal files including journal event files that can be replayed and test configuration files for the "special" `.json` files ED creates (`Cargo.json`, `Market.json`, `Status.json` etc.)
+
+Most of the "special" are replacements for the journal events. For example, the `Market` event is empty except for station information, all the details are written to `Market.json`. This means the harness can't populate them, hence the need to copy pre-defined versions for tests that require them. Cargo is a slight exception in that the harness will updated it based on cargo transfer events.
 
 ### /tests/edmc
 
-This contains live and mock edmc modules used to emulate EDMC so the plugin can run standalone.
+This contains live and mock edmc modules used to emulate EDMC so the plugin can run standalone from EDMC.
 
 ### Others
 
