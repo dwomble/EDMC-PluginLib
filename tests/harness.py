@@ -350,13 +350,6 @@ class TestHarness:
                 with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['Cargo'][0], 'w') as f:
                     json.dump(cargo, f)
 
-            case 'Loadout':
-                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['ModuleInfo'], 'r') as f:
-                    modules = json.load(f)
-                modules['Modules'] = event.get('Modules', [])
-                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES['ModuleInfo'], 'w') as f:
-                    json.dump(modules, f)
-
             case _ if event['event'] in CONFIG_FILES.keys():
                 # Add empty elements where we're unable to infer them.
                 if CONFIG_FILES[event['event']][1] and CONFIG_FILES[event['event']][1] not in event:

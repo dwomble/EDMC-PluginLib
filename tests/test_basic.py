@@ -1,24 +1,19 @@
 """
 Test suite for and EDMC plugin using pytest.
 
-Run with: .venv/bin/python -m pytest tests/test_plugin.py -v --tb=short 2>&1 | tail -30
-Run with: .venv_win\\Scripts\\python.exe -m pytest tests\\test_plugin.py -v --tb=short
+Run with:
+    .venv/bin/python -m pytest tests/test_plugin.py -v --tb=short
+or
+    .venv/bin/python -m pytest tests/test_basic.py
 """
-from pathlib import Path
-
-from zipfile import Path
-
 import pytest
 from typing import Generator
-from time import sleep
-from unittest.mock import patch
 import json
 
 from harness import TestHarness
 import load
-from tests.edmc.requests import queue_response, MockResponse
+from .edmc.requests import queue_response, MockResponse
 import requests
-import filecmp
 
 @pytest.fixture
 def harness(request) -> Generator[TestHarness, None, None]:
@@ -167,3 +162,7 @@ class TestBasicFeatures:
         assert journal.is_beta == False
         assert journal.system == "Bleae Thua ED-D c12-5"
         assert journal.entry['event'] == "NavBeaconScan"
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v', '--tb=short'])
