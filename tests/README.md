@@ -19,7 +19,7 @@ Please be gentle. This is a work in progress and not all EDMC or tool functional
 
 1. Extract the code into a `tests` folder within your plugin directory
 1. Create a venv and install the dependencies
-1. Edit `tests_basic.py` to match your plugin's startup and configuration needs
+1. Create test files to match your plugin's startup and configuration needs (`test_conformance.py` is a simple example)
 1. Run the initialization test to confirm your plugin works
 1. Start writing and running tests
 
