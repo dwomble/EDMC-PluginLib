@@ -39,8 +39,8 @@ def harness(request) -> Generator[TestHarness, None, None]:
 
     yield test_harness
 
-class TestBasicFeatures:
-    """Test basic harness features."""
+class TestInitialization:
+    """Test basic initialization features."""
 
     def test_harness_initialization(self, harness:TestHarness) -> None:
         """Test basic harness initialization."""
@@ -78,6 +78,7 @@ class TestBasicFeatures:
         assert harness.monitor.state['Horizons'] == True
         assert harness.monitor.state['Odyssey'] == True
 
+class TestHTTPRequests:
     def test_mock_http_requests(self, harness:TestHarness) -> None:
         """Test that mock requests work."""
         queue_response('get', MockResponse(200, url='https://testy.com/file.txt', json_data={'result': 'success'}),
@@ -105,6 +106,8 @@ class TestBasicFeatures:
         capi_fleetcarrier(capi_data)
         assert carrier.data is not None
         assert carrier.data == capi_data
+
+class TestJournalEvents:
 
     def test_null_event(self, harness) -> None:
         """ Just a music event to test the machinery of loading and playing events. """
