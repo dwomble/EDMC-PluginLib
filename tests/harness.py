@@ -322,8 +322,8 @@ class TestHarness:
                     case 'CargoTransfer':
                         for item in event.get('Transfers', []):
                             cargo['Inventory'].append({
-                                'Name': self.monitor.canonicalise(item['Name']),
-                                'Name_Localised': item.get('Name_Localised', self.monitor.canonicalise(item['Name'])),
+                                'Name': self.monitor.canonicalise(item['Type']),
+                                'Name_Localised': item.get('Type_Localised', self.monitor.canonicalise(item['Type'])),
                                 'Count': item['Count'] if item.get('Direction') == "toship" else -item['Count'],
                                 'Stolen': item.get('Stolen', 0)
                             })
