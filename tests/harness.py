@@ -85,6 +85,7 @@ class TestHarness:
         for (file, key) in CONFIG_FILES.values():
             shutil.copy(Path(__file__).parent / "journal_config" / file,
                 Path(__file__).parent / "journal_folder" / file)
+
         monitor.currentdir = str(Path(__file__).parent / "journal_folder")
         self.monitor = monitor
         self.monitor.state['Credits'] = 1000000
@@ -354,5 +355,5 @@ class TestHarness:
                 # Add empty elements where we're unable to infer them.
                 if CONFIG_FILES[event['event']][1] and CONFIG_FILES[event['event']][1] not in event:
                      event[CONFIG_FILES[event['event']][1]] = state.get(CONFIG_FILES[event['event']][1], [])
-                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']], 'w') as f:
+                with open(self.plugin_dir / "journal_folder" / CONFIG_FILES[event['event']][0], 'w') as f:
                     json.dump(event, f)
