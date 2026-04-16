@@ -19,8 +19,8 @@ Please be gentle. This is a work in progress and not all EDMC or tool functional
 
 1. Extract the code into a `tests` folder within your plugin directory
 1. Create a venv and install the dependencies
-1. Create test files to match your plugin's startup and configuration needs (`test_conformance.py` is a simple example)
-1. Run the initialization test to confirm your plugin works
+1. Edit `test_conformance.py` to match your plugin's startup and configuration needs
+1. Run the coonformance tests to confirm your plugin initializes with the harness
 1. Start writing and running tests
 
 If, like me, you work best from example the following plugins use the harness: [Neutron Dancer](https://github.com/dwomble/EDMC-NeutronDancer), [BGS-Tally](https://github.com/aussig/BGS-Tally/tree/feature/Issue-454/test-harness), and [EDMC Mining Analytics](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics).
