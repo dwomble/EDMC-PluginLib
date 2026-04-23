@@ -64,12 +64,6 @@ class TestHarness:
     """ Main test harness. """
     # Prevent pytest from trying to collect this helper class as a test class
     __test__ = False
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
     def __init__(self, plugin_dir:Optional[str] = None, live_requests:bool = False):
         """ Initialize the test harness. """
@@ -106,14 +100,12 @@ class TestHarness:
 
         # Create Tk root for headless mode
         try:
-            if not hasattr(self, '_initialized'):
-                root:tk.Tk = tk.Tk()
-                self.parent:tk.Frame = tk.Frame(root)
-                root.withdraw()
+            root:tk.Tk = tk.Tk()
+            self.parent:tk.Frame = tk.Frame(root)
+            root.withdraw()
         except Exception as e:
             logging.error(f"Failed to create Tk root: {e}")
 
-        self._initialized = True
 
     def _capture_thread_exception(self, args: threading.ExceptHookArgs) -> None:
         """Record unhandled worker-thread exceptions so tests can fail deterministically."""
