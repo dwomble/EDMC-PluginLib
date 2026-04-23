@@ -68,7 +68,7 @@ def prefs_changed(cmdr: str, is_beta: bool) -> None:
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
     """ Parse an incoming journal entry and store the data we need """
-    global journal
+
     journal.cmdr = cmdr
     journal.is_beta = is_beta
     journal.system = system
@@ -78,12 +78,12 @@ def journal_entry(cmdr, is_beta, system, station, entry, state):
 
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
     """ Handle dashboard state changes """
-    global dashboard
+
     dashboard.cmdr = cmdr
     dashboard.is_beta = is_beta
     dashboard.entry = entry
 
 def capi_fleetcarrier(data:CAPIData):
     """ Handle Fleet carrier data """
-    global carrier
+
     carrier.data = data

@@ -34,7 +34,7 @@ jobs:
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --extend-exclude .venv,tests/edmc,utils/dateutil --count --select=E9,F63,F7,F82 --show-source --statistics
 
         # Enable if you wish for more comprehensive linting, but it can be noisy and may require code changes to pass
         #flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
