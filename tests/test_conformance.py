@@ -39,6 +39,8 @@ def harness(request) -> Generator[TestHarness, None, None]:
 
     yield test_harness
 
+    # Add any necessary teardown code here. The test harness will automatically clean up the plugin directory and restore mocks.
+
 class TestInitialization:
     """Test basic initialization features."""
 
