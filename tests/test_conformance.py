@@ -166,6 +166,10 @@ class TestJournalEvents:
         assert journal.system == "Bleae Thua ED-D c12-5"
         assert journal.entry['event'] == "NavBeaconScan"
 
+    @pytest.mark.slow
+    def test_manual_only(self, harness) -> None:
+        """ A demo slow test that won't be run by the unit-testing.yml. """
+        assert True
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
