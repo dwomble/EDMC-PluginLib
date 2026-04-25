@@ -1,8 +1,8 @@
-# general purpose 'tooltip' routines - currently unused in idlefork
-# (although the 'calltips' extension is partly based on this code)
-# may be useful for some purposes in (or almost in ;) the current project scope
-# Ideas gleaned from PySol
+# General purpose 'tooltip' routines
+# Supports labels and treeview
 
+from .debug import Debug, catch_exceptions
+from .tkrichtext import RichLabel
 import tkinter as tk
 from tkinter import ttk
 from typing import Optional, Tuple
@@ -51,10 +51,18 @@ class TooltipBase:
         tw.wm_geometry("+%d+%d" % (x, y))
         self.showcontents()
 
-    def showcontents(self, text="Your text here"):
-        # Override this in derived class
-        label = tk.Label(self.tipwindow, text=text, justify=tk.LEFT,
-                      background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+    @catch_exceptions
+    def showcontents(self, **kwargs):
+        if 'markdown' in kwargs:
+            label:tk.Label|RichLabel = RichLabel(self.tipwindow, markdown=kwargs['markdown'],
+                                                 background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+        elif 'html' in kwargs:
+            label:tk.Label|RichLabel = RichLabel(self.tipwindow, html=kwargs['html'],
+                                                 background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+        else:
+            label:tk.Label|RichLabel = tk.Label(self.tipwindow, text=kwargs['text'], justify=tk.LEFT,
+                                                background="#ffffe0", relief=tk.SOLID, borderwidth=1)
+
         label.pack()
 
     def hidetip(self):
@@ -65,13 +73,15 @@ class TooltipBase:
 
 
 class Tooltip(TooltipBase):
-    """ Show a mouseover tooltip on a button with the given text. """
-    def __init__(self, button, text):
+
+    def __init__(self, button, text:str='', **kwargs):
         TooltipBase.__init__(self, button)
-        self.text = text
+        self.args = kwargs
+        if text != '':
+            self.args['text'] = text
 
     def showcontents(self):
-        TooltipBase.showcontents(self, self.text)
+        TooltipBase.showcontents(self, **self.args)
 
 
 class TreeTooltip:
