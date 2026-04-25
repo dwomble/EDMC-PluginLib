@@ -29,3 +29,15 @@ Examples using the harness include [Navl's Neutron Dancer](https://github.com/dw
 ## utils
 
 A Library of utilities for EDMC plugins and an EDMC headless test harness. Some utilities are drop-in ready to go, some may require some configuration, and others may need adapting to your plugin. They have comments or README's describing their functionality.
+
+## .github/workflows
+
+Some useful `GitHub` workflow scripts.
+
+### release.yml
+
+Creates a release `.zip` and puts it through VirusTotal and adds the result to the release notes
+
+### unit-testing.yml
+
+Runs `flake8` and `pytest` when code is pushed to the main branch or a PR is created for the main branch.

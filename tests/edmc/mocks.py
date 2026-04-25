@@ -17,18 +17,10 @@ this_dir:Path = Path(__file__).parent
 parent:Path = Path(__file__).parent.parent
 
 class MockConfig:
-    _instance = None
-
-    # Singleton pattern
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
     def __init__(self):
-        if hasattr(self, '_initialized'): return
         self.data = {} # Any variables that need setting
-        self._initialized = True
+
     @staticmethod
     def get_appdirpath() -> Path:
         return this_dir
