@@ -17,10 +17,18 @@ this_dir:Path = Path(__file__).parent
 parent:Path = Path(__file__).parent.parent
 
 class MockConfig:
+    _instance = None
+
+    # Singleton pattern
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self):
+        if hasattr(self, '_initialized'): return
         self.data = {} # Any variables that need setting
-
+        self._initialized = True
     @staticmethod
     def get_appdirpath() -> Path:
         return this_dir
@@ -51,12 +59,6 @@ class MockConfig:
         if value is None: return default
         return str(value)
 
-    def get_list(self, key: str, default=None):
-        val = self.get(key.lower())
-        return (
-            val if isinstance(val, list) else (default if default is not None else [])
-        )
-
     def get_bool(self, key: str, default=False) -> bool:
         val = self.get(key.lower())
 
@@ -67,6 +69,12 @@ class MockConfig:
         if isinstance(val, str) and val.strip().lower() in ("0", "false", "no", "off"): return False
 
         return default
+
+    def get_list(self, key: str, default=None):
+        val = self.get(key.lower())
+        return (
+            val if isinstance(val, list) else (default if default is not None else [])
+        )
 
     def delete(self, key: str, *, suppress=False) -> None:
         if key in self.data:
@@ -103,12 +111,36 @@ for name, val in _cfg_attrs.items():
 sys.modules['config'] = _cfg
 
 # Minimal EDMC `theme` module emulator for direct runs (examples.py / __main__)
-theme_mod = _types.ModuleType("theme")
-theme_mod.theme = _types.SimpleNamespace() # type:ignore
-theme_mod.theme.name = "default"
-theme_mod.theme.dark = False
-sys.modules['theme'] = theme_mod
+class MockTheme:
+    def __init__(self):
+        if hasattr(self, '_initialized'): return
+        self._initialized = True
+    def register(self, widget) -> None:  # noqa: CCR001, C901
+        pass
+    def register_alternate(self, pair, gridopts) -> None:
+        pass
+    def button_bind(self, widget, command, image) -> None:
+        pass
+    def update(self, widget) -> None:
+        pass
+    def apply(self, root) -> None:
+        pass
 
+_theme_attrs = {
+    'name': "default",
+    'dark': False
+}
+
+_theme = _types.ModuleType('theme')
+_theme.theme = MockTheme()  # type:ignore
+for name, val in MockTheme.__dict__.items():
+    if not name.startswith('__'):
+        setattr(_theme, name, val)
+
+for name, val in _theme_attrs.items():
+    setattr(_theme, name, val)
+
+sys.modules['theme'] = _theme
 
 class MockCAPIData:
     def __init__(self, data = None, source_host = None, source_endpoint = None, request_cmdr = None) -> None:

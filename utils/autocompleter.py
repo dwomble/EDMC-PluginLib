@@ -2,8 +2,10 @@ import queue
 import threading
 import tkinter as tk
 
+from theme import theme # type: ignore
 from config import config # type: ignore
 
+from utils.debug import Debug, catch_exceptions
 from .placeholder import Placeholder
 
 class Autocompleter(Placeholder):
@@ -18,7 +20,6 @@ class Autocompleter(Placeholder):
     """
     def __init__(self, parent:tk.Frame, placeholder:str, **kw) -> None:
         self.parent:tk.Frame = parent
-
         self.func = None
         if 'func' in kw:
             self.func = kw['func']
@@ -32,6 +33,7 @@ class Autocompleter(Placeholder):
         self.popup:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
         self.popup.wm_overrideredirect(True)
         self.lb:tk.Listbox = tk.Listbox(self.popup, selectmode=tk.SINGLE, **kw)
+        theme.update(self.lb)
 
         self.lb.pack(fill=tk.BOTH, expand=True)
         self.popup.withdraw()
@@ -128,6 +130,8 @@ class Autocompleter(Placeholder):
     def show_list(self, height) -> None:
         self.lb["height"] = height
         if not self.lb_up and self.parent.focus_get() is self:
+            self.popup.configure(bg=theme.current['background'])
+            self.lb.configure(bg=theme.current['background'], fg=theme.current['foreground'], selectbackground=theme.current['activebackground'], selectforeground=theme.current['activeforeground'])
             x:int = self.winfo_rootx()
             y:int = self.winfo_rooty() + self.winfo_height()
             self.popup.wm_geometry(f"+{x}+{y}")
@@ -157,16 +161,10 @@ class Autocompleter(Placeholder):
         self.after(100, self.update_me)
 
     def set_text(self, text, placeholder_style=True) -> None:
-        if placeholder_style:
-            self['fg'] = self.placeholder_color
-        else:
-            self.set_default_style()
-
         try:
             self.var.trace_remove("write", self.traceid)
         except:
             pass
         finally:
-            self.delete(0, tk.END)
-            self.insert(0, text)
+            super().set_text(text, placeholder_style)
             self.traceid = self.var.trace_add('write', self.changed)
