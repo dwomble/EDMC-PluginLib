@@ -74,6 +74,9 @@ class TestHarness:
         self.plugin_dir:Path = Path(plugin_dir).resolve()
         self.plugin:Any = None
 
+        shutil.copy(Path(__file__).parent / "config" / "config_init.toml",
+                Path(__file__).parent / "config" / "config.toml")
+
         # Copy the initial config state files
         Path(__file__).parent.joinpath("journal_folder").mkdir(exist_ok=True)
         for (file, key) in CONFIG_FILES.values():

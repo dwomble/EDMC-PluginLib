@@ -1,10 +1,10 @@
 """
-Test suite for and EDMC plugin using pytest.
+Test suite for an EDMC plugin using pytest.
 
 Run with:
-    .venv/bin/python -m pytest tests/test_plugin.py -v --tb=short
+    .venv/bin/python -m pytest tests/test_conformance.py -v --tb=short
 or
-    .venv/bin/python -m pytest tests/test_basic.py
+    .venv/bin/python -m pytest tests/test_conformance.py
 """
 import pytest
 from typing import Generator
@@ -34,7 +34,6 @@ def harness(request) -> Generator[TestHarness, None, None]:
     journal = load.journal
     carrier = load.carrier
 
-    test_harness.load_events("journal_events.json")
     test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', False)
 
     yield test_harness
@@ -59,16 +58,6 @@ class TestInitialization:
         assert plugin.parent == harness.parent
         assert plugin.frame is not None
 
-    def test_mock_config(self, harness:TestHarness) -> None:
-        """Test the mock config."""
-
-        harness.config.set('DummyPlugin_intval', 42)
-        harness.config.set('DummyPlugin_strval', "Hello, World!")
-
-        assert harness.config.get_str('DummyPlugin_status', default='Disabled') == 'Active'
-        assert harness.config.get_int('DummyPlugin_intval') == 42
-        assert harness.config.get_str('DummyPlugin_strval') == "Hello, World!"
-
     def test_load_state(self, harness:TestHarness) -> None:
         """Test that state files are loaded correctly."""
 
@@ -80,6 +69,46 @@ class TestInitialization:
         assert harness.monitor.state['Captain'] == "Testy"
         assert harness.monitor.state['Horizons'] == True
         assert harness.monitor.state['Odyssey'] == True
+
+class TestConfig:
+    """Test mock configuration handling."""
+
+    def test_str(self, harness:TestHarness) -> None:
+        """Test strings mock config."""
+
+        harness.config.set('DummyPlugin_strval', "Active")
+        assert harness.config.get_str('DummyPlugin_strval', default='None') == 'Active'
+
+    def test_int(self, harness:TestHarness) -> None:
+        """Test integer mock config."""
+
+        harness.config.set('DummyPlugin_intval', 42)
+        assert harness.config.get_int('DummyPlugin_intval') == 42
+
+    def test_bool(self, harness:TestHarness) -> None:
+        """Test boolean mock config."""
+
+        harness.config.set('DummyPlugin_boolval', True)
+        assert harness.config.get_bool('DummyPlugin_boolval') == True
+
+    def test_list(self, harness:TestHarness) -> None:
+        """Test list mock config."""
+
+        harness.config.set('DummyPlugin_listval', [1, 2, 3])
+        assert harness.config.get_list('DummyPlugin_listval') == [1, 2, 3]
+
+    def test_default(self, harness:TestHarness) -> None:
+        """Test default values for mock config."""
+
+        assert harness.config.get_str('DummyPlugin_status', default='None') == 'None'
+
+    def test_del(self, harness:TestHarness) -> None:
+        """Test deletes in mock config."""
+
+        harness.config.set('DummyPlugin_strval', "Active")
+        assert harness.config.get_str('DummyPlugin_strval', default='None') == 'Active'
+        harness.config.delete('DummyPlugin_strval')
+        assert harness.config.get_str('DummyPlugin_strval', default='None') == 'None'
 
 class TestHTTPRequests:
     def test_mock_http_requests(self, harness:TestHarness) -> None:
