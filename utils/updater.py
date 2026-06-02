@@ -7,8 +7,8 @@ from semantic_version import Version # type: ignore
 from utils.debug import Debug
 
 TIMEOUT=10
-GH_PROJECT = '' # Set your github project name here, e.g. "NeutronDancer"
-GH_RELEASE_INFO = '' # Set the github api url for release info, e.g. "https://api.github.com/repos/NeutronDancer/EDMC-PluginLib/releases/latest"
+GH_PROJECT = '' # Set your github project name here, e.g. "my-plugin"
+GH_RELEASE_INFO = '' # Set the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
 
 class Updater():
     """
