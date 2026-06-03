@@ -3,8 +3,7 @@ Test suite for an EDMC plugin using pytest.
 
 Run with:
     .venv/bin/python -m pytest tests/test_conformance.py -v --tb=short
-or
-    .venv/bin/python -m pytest tests/test_conformance.py
+
 """
 import pytest
 from typing import Generator

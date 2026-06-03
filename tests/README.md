@@ -20,7 +20,7 @@ Please be gentle. This is a work in progress and not all EDMC or tool functional
 1. Extract the code into a `tests` folder within your plugin directory
 1. Create a venv and install the dependencies
 1. Edit `test_conformance.py` to match your plugin's startup and configuration needs
-1. Run the coonformance tests to confirm your plugin initializes with the harness
+1. Run the conformance tests to confirm your plugin initializes with the harness
 1. Start writing and running tests
 
 If, like me, you work best from example the following plugins use the harness: [Neutron Dancer](https://github.com/dwomble/EDMC-NeutronDancer), [BGS-Tally](https://github.com/aussig/BGS-Tally/tree/feature/Issue-454/test-harness), and [EDMC Mining Analytics](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics).
@@ -65,7 +65,7 @@ Setup a python virtual environment and install `pytest`. You can then run `pytes
 
 ### Debugging tests
 
-If you install the python debugger you can run the tests with the debugger enabling breakpoints and all that fun stuff.With an IDE such as VS Code tests can be directly run using the python debugger to step through sections.
+If you install the python debugger you can run the tests with the debugger enabling breakpoints and all that fun stuff. With an IDE such as VS Code tests can be directly run using the python debugger to step through sections.
 
 ### Test coverage
 
@@ -83,7 +83,7 @@ This folder is used for test configuration files including `edmc_config.json` th
 
 This folder is used for test journal files including journal event files that can be replayed and test configuration files for the "special" `.json` files ED creates (`Cargo.json`, `Market.json`, `Status.json` etc.)
 
-Most of the "special" are replacements for the journal events. For example, the `Market` event is empty except for station information, all the details are written to `Market.json`. This means the harness can't populate them, hence the need to copy pre-defined versions for tests that require them. Cargo is a slight exception in that the harness will updated it based on cargo transfer events.
+Most of the "special" files are replacements for the journal events. For example, the `Market` event is empty except for station information, all the details are written to `Market.json`. This means the harness can't populate them, hence the need to copy pre-defined versions for tests that require them. Cargo is a slight exception in that the harness will update it based on cargo transfer events.
 
 ### /tests/edmc
 
@@ -91,7 +91,7 @@ This contains live and mock edmc modules used to emulate EDMC so the plugin can 
 
 ### Others
 
-Other folders created by plugin for saving data will be created in `/tests` avoiding overwriting or corrupting files in the main plugin directory.
+Other folders created by the plugin for saving data will be created in `/tests` to avoid overwriting or corrupting files in the main plugin directory.
 
 ## Tips and Tricks
 
@@ -99,7 +99,7 @@ Other folders created by plugin for saving data will be created in `/tests` avoi
 
 The harness mocks the EDMC config and loads `config/edmc_config.json` as an initial config.
 
-If you want to use an entirely different config for a specific tests call `load_edmc_config(file)`.
+If you want to use an entirely different config for a specific test call `load_edmc_config(file)`.
 
 ### Other data
 
@@ -174,6 +174,6 @@ For example:
 
 Two file formats are supported.
 
-1. `.json` data files. These should be a dictionary of lists where the dictionary keys are the action to run and the list is a series of log entries.
+1. `.json` data files. These should be a dictionary of lists where the dictionary keys are the action to run and the list is a sequence of log entries.
 
 1. ED journal `.log` files. These can be taken directly from the ED journal folder. All the entries will be loaded and given the action name "default".
