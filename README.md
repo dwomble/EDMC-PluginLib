@@ -2,6 +2,12 @@
 
 Bringing EDMC plugin development out of the dark ages.
 
+The library has three components.
+
+1. The test harness for running unit test
+1. A library of useful utilities
+1. Some useful github workflows
+
 ## tests
 
 A unit testing tool for EDMC that mocks up EDMC functionality in order to run `pytest` unit tests, use the python debugger, and `pycov` test coverage analysis.
@@ -9,7 +15,7 @@ A unit testing tool for EDMC that mocks up EDMC functionality in order to run `p
 <img width="158" height="371" alt="Code test coverage" src="https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f" />
 <img width="595" height="290" alt="Debugging a plugin" src="https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f" />
 
-*Features*
+### Features
 
 * Replay journal events with customization
 * Mock (or live) HTTPS requests
@@ -25,7 +31,6 @@ But if you want to run unit tests, replay ED logs, or run your plugin with a deb
 
 Examples using the harness include [Navl's Neutron Dancer](https://github.com/dwomble/EDMC-NeutronDancer), [BGS-Tally](https://github.com/aussig/BGS-Tally) and [EDMC Mining Analytics](https://github.com/SweetJonnySauce/EDMC-Mining-Analytics).
 
-
 ## utils
 
 A Library of utilities for EDMC plugins and an EDMC headless test harness. Some utilities are drop-in ready to go, some may require some configuration, and others may need adapting to your plugin. They have comments or README's describing their functionality.
@@ -36,7 +41,7 @@ Some useful `GitHub` workflow scripts.
 
 ### release.yml
 
-Creates a release `.zip` and puts it through VirusTotal and adds the result to the release notes
+Creates a release `.zip` and puts it through VirusTotal and adds the result to the release notes.
 
 ### unit-testing.yml
 

@@ -95,19 +95,19 @@ Other folders created by the plugin for saving data will be created in `/tests` 
 
 ## Tips and Tricks
 
-### Mock EDMC Config
-
-The harness mocks the EDMC config and loads `config/edmc_config.json` as an initial config.
-
-If you want to use an entirely different config for a specific test call `load_edmc_config(file)`.
-
-### Other data
+### Plugin config
 
 It's often desirable to use a consistent configuration for testing. This can be achieved by storing a standard version in `config` and copying it to wherever your plugins looks for it prior to startup e.g.
 
 ```python
    shutil.copy(Path(__file__).parent / "config" / "colonisation_init.json",  Path(__file__).parent / "otherdata" / "colonisation.json")
 ```
+
+### Mock EDMC Config
+
+The harness mocks the EDMC config and loads `config/config.toml` as an initial config.
+
+If you want to use an entirely different config for a specific test call `load_edmc_config(file)`.
 
 ### Mock HTTP Requests
 
