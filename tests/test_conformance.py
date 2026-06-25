@@ -99,7 +99,7 @@ class TestConfig:
     def test_default(self, harness:TestHarness) -> None:
         """Test default values for mock config."""
 
-        assert harness.config.get_str('DummyPlugin_status', default='None') == 'None'
+        assert harness.config.get_str('DummyPlugin_nonexistent', default='None') == 'None'
 
     def test_del(self, harness:TestHarness) -> None:
         """Test deletes in mock config."""
