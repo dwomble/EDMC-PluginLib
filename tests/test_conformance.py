@@ -45,7 +45,6 @@ class TestInitialization:
     def test_harness_initialization(self, harness:TestHarness) -> None:
         """Test basic harness initialization."""
         assert harness is not None
-        # Should this be automatically set to Active by the harness?
         assert harness.config.get_str('DummyPlugin_status', default='Disabled') == 'Active'
 
     def test_plugin_registration(self, harness:TestHarness) -> None:
