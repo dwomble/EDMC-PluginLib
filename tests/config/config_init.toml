@@ -20,3 +20,4 @@ language = ""
 edsm_out = 0
 inara_out = 0
 edastro_send = 0
+DummyPlugin_status = "Active"
