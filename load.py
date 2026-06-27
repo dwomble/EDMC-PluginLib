@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Dict
 from companion import CAPIData # type: ignore
 
+from utils.debug import Debug
 from utils.updater import Updater
 
 PLUGIN_NAME = "DummyPlugin"
@@ -49,6 +50,17 @@ class journal:
 @dataclass
 class carrier:
     data:CAPIData
+
+def has_overlay(modern:bool) -> bool:
+    """ Try loading an overlay plugin. Return True if it was successful, False if not. """
+    try:
+        from EDMCOverlay import edmcoverlay # type: ignore
+        if modern:
+            from overlay_plugin.overlay_api import define_plugin_group # type: ignore
+        return True
+    except ImportError:
+        pass
+    return False
 
 def plugin_start3(plugin_dir):
     """ Load this plugin into EDMC """

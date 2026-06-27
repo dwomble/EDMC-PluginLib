@@ -9,8 +9,9 @@ import pytest
 from typing import Generator
 import json
 
-from harness import TestHarness
-import load
+from typing import TYPE_CHECKING, Generator
+if TYPE_CHECKING:
+    from harness import TestHarness, reset_plugin_modules
 from .edmc.requests import queue_response, MockResponse
 import requests
 
@@ -21,23 +22,31 @@ def harness(request) -> Generator[TestHarness, None, None]:
 
     live = request.node.get_closest_marker('live_requests') is not None
 
-    test_harness = TestHarness(live_requests=live)
+    overlay = 'All'
+    if request.node.get_closest_marker('overlay'):
+        overlay = request.node.get_closest_marker('overlay').args[0]
 
-    from load import plugin_start3, plugin_app, journal_entry, capi_fleetcarrier
+    from harness import TestHarness, reset_plugin_modules
+    TestHarness.reset_instance()
+    reset_plugin_modules()
+    test_harness = TestHarness(live_requests=live, overlay=overlay)
 
+    from load import plugin_start3, plugin_app, journal_entry, capi_fleetcarrier, plugin, dashboard, journal, carrier
     plugin_start3(str(test_harness.plugin_dir))
     plugin_app(test_harness.parent)
 
-    plugin = load.plugin
-    dashboard = load.dashboard
-    journal = load.journal
-    carrier = load.carrier
+    plugin = plugin
+    dashboard = dashboard
+    journal = journal
+    carrier = carrier
 
     test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', False)
 
     yield test_harness
 
     # Add any necessary teardown code here. The test harness will automatically clean up the plugin directory and restore mocks.
+    test_harness.assert_no_unhandled_exceptions()
+    TestHarness.reset_instance()
 
 class TestInitialization:
     """Test basic initialization features."""
@@ -209,6 +218,27 @@ class TestJournalEvents:
     def test_manual_only(self, harness) -> None:
         """ A demo slow test that won't be run by the unit-testing.yml. """
         assert True
+
+class TestOverlay:
+    """Test overlay functionality."""
+
+    @pytest.mark.overlay('None')
+    def test_no_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        from load import has_overlay
+        assert has_overlay(False) == False
+
+    @pytest.mark.overlay('Legacy')
+    def test_legacy_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        from load import has_overlay
+        assert has_overlay(False) == True
+
+    @pytest.mark.overlay('Modern')
+    def test_modern_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        from load import has_overlay
+        assert has_overlay(True) == True
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
