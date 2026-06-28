@@ -17,13 +17,16 @@ A unit testing tool for EDMC that mocks up EDMC functionality in order to run `p
 
 ### Features
 
-* Replay journal events (with customization)
-* Mock (or live) HTTPS responses
-* Mock EDMC config object
+* Journal event replay, with customization
 * Mock state handling
+* Mock EDMC config
+* Mock ED logging
+* Mock i10n translation
 * Mock CAPI event handling
-* A mock overlay
-* Mock localization functions
+* Mock EDMC Overlay
+* Mock HotKeys
+* Mock (or live) HTTPS requests
+* Mock dashboard event replay
 
 Though it works with some quite complex plugins that use a wide range of EDMC features, this is a work in progress and not all EDMC or tool functionality is mocked up yet so it may take a little effort to get it working with your plugin.
 
@@ -31,13 +34,13 @@ Examples using the harness include [Navl's Neutron Dancer](https://github.com/dw
 
 ### Installation
 
-Copy the `/tests` folder into your plugin, edit the `test_conformance.py` to implement your tests. 
+Copy the `/tests` folder into your plugin, edit the `test_conformance.py` to implement your tests.
 
 The library includes a simplistic plugin and conformance tests that exercise the harness itself. i.e. The library uses the test harness to test the test harness.
 
 ## Utility classes and functions
 
-A Library of utilities for EDMC plugins and an EDMC headless test harness. Some utilities are drop-in ready to go, some may require some configuration, and others may need adapting to your plugin. They have comments or README's describing their functionality.
+A Library of utilities for EDMC plugins. Some utilities are drop-in ready to go, some may require some configuration, and others may need adapting to your plugin. They have comments or README's describing their functionality.
 
 ## Github Workflows
 

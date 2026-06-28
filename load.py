@@ -51,16 +51,16 @@ class journal:
 class carrier:
     data:CAPIData
 
-def has_overlay(modern:bool) -> bool:
+def get_overlay(modern:bool):
     """ Try loading an overlay plugin. Return True if it was successful, False if not. """
     try:
         from EDMCOverlay import edmcoverlay # type: ignore
         if modern:
             from overlay_plugin.overlay_api import define_plugin_group # type: ignore
-        return True
+        return edmcoverlay.Overlay()
     except ImportError:
         pass
-    return False
+    return None
 
 def plugin_start3(plugin_dir):
     """ Load this plugin into EDMC """

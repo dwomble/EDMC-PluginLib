@@ -12,6 +12,8 @@ import json
 from typing import TYPE_CHECKING, Generator
 if TYPE_CHECKING:
     from harness import TestHarness, reset_plugin_modules
+
+from .edmc import edmc_data
 from .edmc.requests import queue_response, MockResponse
 import requests
 
@@ -31,7 +33,8 @@ def harness(request) -> Generator[TestHarness, None, None]:
     reset_plugin_modules()
     test_harness = TestHarness(live_requests=live, overlay=overlay)
 
-    from load import plugin_start3, plugin_app, journal_entry, capi_fleetcarrier, plugin, dashboard, journal, carrier
+    from load import plugin_start3, plugin_app, journal_entry, dashboard_entry, capi_fleetcarrier, \
+                     plugin, dashboard, journal, carrier
     plugin_start3(str(test_harness.plugin_dir))
     plugin_app(test_harness.parent)
 
@@ -41,6 +44,7 @@ def harness(request) -> Generator[TestHarness, None, None]:
     carrier = carrier
 
     test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', False)
+    test_harness.register_dashboard_handler(dashboard_entry)
 
     yield test_harness
 
@@ -119,6 +123,8 @@ class TestConfig:
         assert harness.config.get_str('DummyPlugin_strval', default='None') == 'None'
 
 class TestHTTPRequests:
+    """Test mock and live HTTP requests."""
+
     def test_mock_http_requests(self, harness:TestHarness) -> None:
         """Test that mock requests work."""
 
@@ -150,6 +156,7 @@ class TestHTTPRequests:
         assert carrier.data == capi_data
 
 class TestJournalEvents:
+    """ Test journal event handling and state updates."""
 
     def test_null_event(self, harness) -> None:
         """ Just a music event to test the machinery of loading and playing events. """
@@ -219,26 +226,70 @@ class TestJournalEvents:
         """ A demo slow test that won't be run by the unit-testing.yml. """
         assert True
 
+class TestDashboardEvents:
+    """Test dashboard event handling and state updates."""
+
+    def test_gui_event(self, harness) -> None:
+        """ Just a simple dashboard gui event. """
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusGalaxyMap})
+
+        assert dashboard.cmdr == "Testy"
+        assert dashboard.is_beta == False
+        assert dashboard.entry['GuiFocus'] == edmc_data.GuiFocusGalaxyMap
+
+    def test_flags_event(self, harness) -> None:
+        """ Just a simple dashboard flags event. """
+
+        harness.fire_dashboard_event({"Flags": edmc_data.FlagsShieldsUp | edmc_data.FlagsSupercruise})
+
+        assert dashboard.cmdr == "Testy"
+        assert dashboard.is_beta == False
+        assert dashboard.entry['Flags'] & edmc_data.FlagsShieldsUp == edmc_data.FlagsShieldsUp
+        assert dashboard.entry['Flags'] & edmc_data.FlagsSupercruise == edmc_data.FlagsSupercruise
+        assert dashboard.entry['Flags'] & edmc_data.FlagsFlightAssistOff != edmc_data.FlagsFlightAssistOff
+
+    def test_flags2_event(self, harness) -> None:
+        """ Just a simple dashboard flags2 event. """
+
+        harness.fire_dashboard_event({"Flags2": edmc_data.Flags2OnFoot | edmc_data.Flags2LowOxygen})
+
+        assert dashboard.cmdr == "Testy"
+        assert dashboard.is_beta == False
+        assert dashboard.entry['Flags2'] & edmc_data.Flags2OnFoot == edmc_data.Flags2OnFoot
+        assert dashboard.entry['Flags2'] & edmc_data.Flags2LowOxygen == edmc_data.Flags2LowOxygen
+        assert dashboard.entry['Flags'] & edmc_data.Flags2OnFootInHangar != edmc_data.Flags2OnFootInHangar
+
 class TestOverlay:
     """Test overlay functionality."""
 
     @pytest.mark.overlay('None')
     def test_no_overlay(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure overlay is not present when overlay mode is disabled."""
-        from load import has_overlay
-        assert has_overlay(False) == False
+        from load import get_overlay
+        assert get_overlay(False) == None
 
     @pytest.mark.overlay('Legacy')
     def test_legacy_overlay(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure overlay is not present when overlay mode is disabled."""
-        from load import has_overlay
-        assert has_overlay(False) == True
+        from load import get_overlay
+        assert get_overlay(False) is not None
 
     @pytest.mark.overlay('Modern')
     def test_modern_overlay(self, harness:TestHarness, monkeypatch) -> None:
         """Ensure overlay is not present when overlay mode is disabled."""
-        from load import has_overlay
-        assert has_overlay(True) == True
+        from load import get_overlay
+        assert get_overlay(True) is not None
+
+    def test_overlay_functionality(self, harness:TestHarness, monkeypatch) -> None:
+        """ Test overlay functionality. """
+        from load import get_overlay
+        overlay = get_overlay(True)
+        if not overlay:
+            pytest.skip("Overlay not available for this test.")
+
+        overlay.send_message(1, "Test message", "#fFffff", 'normal')
+        assert getattr(overlay, 'messages', {}).get(1) == [1, 'Test message', '#fFffff', 'normal', {}]
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
