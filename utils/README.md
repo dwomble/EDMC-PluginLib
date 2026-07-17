@@ -134,3 +134,20 @@ tree.heading("three", text="Count", sort_by="num")
 ## scrollablenotebook
 
 A ttk Notebook with scrollable tabs.
+
+## Singleton
+
+A thread-safe singleton decorator.
+
+```python
+from utils.misc import singleton
+
+@singleton
+class my_singleton:
+    __init__():
+        pass
+
+x = my_singleton()
+y = my_singleton()
+x == y
+```

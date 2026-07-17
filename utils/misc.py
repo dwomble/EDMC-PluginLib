@@ -2,10 +2,29 @@ import subprocess
 import os
 import sys
 import shutil
+import threading
 import tkinter as tk
 from typing import Any
 from functools import reduce
 import operator
+
+"""
+  Class decorators
+"""
+def singleton(cls):
+    """ A thread-safe implementation of Singleton. Note this will break unittest.mock.patch """
+    instances = {}
+    lock = threading.Lock()
+
+    def get_instance(*args, **kwargs):
+        if cls in instances:
+            return instances[cls]
+        with lock:
+            if cls not in instances:
+                instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+
+    return get_instance
 
 """
   Miscellaneous utility functions
