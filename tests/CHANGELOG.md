@@ -1,6 +1,35 @@
 # EDMC-PluginLib Changelog
 
-## v0.1.0 2026-07-??
+## v0.2.0 2026-??-??
+
+### New Features
+
+* Added an EDMC theme-aware ttk/tk object library (th) including:
+  * TopLevel
+  * Frame
+  * LabelFrame
+  * Label
+  * Entry with placeholder text
+  * Entry with autocompletion
+  * Button
+  * RadioButton
+  * Checkbutton
+  * Combobox
+  * Listbox
+  * Scale
+  * Spinbox
+  * Tooltip
+
+### Changes
+
+* The updater now has a configurable re-check frequency limit
+
+### Bug Fixes
+
+* Fixed various placeholder and autocomplete issues with different EDMC theme modes
+* Added mock support for tk clipboard
+
+## v0.1.0 2026-04-15
 
 ### New Features
 

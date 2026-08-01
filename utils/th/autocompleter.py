@@ -5,7 +5,7 @@ import tkinter as tk
 from theme import theme # type: ignore
 from config import config # type: ignore
 
-from utils.debug import Debug, catch_exceptions
+from utils.debug import catch_exceptions
 from .placeholder import Placeholder
 
 class Autocompleter(Placeholder):
@@ -30,6 +30,7 @@ class Autocompleter(Placeholder):
 
         if 'menu' in kw:
             del kw['menu']
+
         self.popup:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
         self.popup.wm_overrideredirect(True)
         self.lb:tk.Listbox = tk.Listbox(self.popup, selectmode=tk.SINGLE, **kw)
@@ -46,7 +47,36 @@ class Autocompleter(Placeholder):
         self.lb.bind("<ButtonRelease-1>", self.selection)
         self.bind("<FocusOut>", self.ac_focus_out)
         self.lb.bind("<FocusOut>", self.ac_focus_out)
+
+        self.last_hovered = None
+        self.lb.bind("<Motion>", self.mouse_move)
+        self.lb.bind("<Leave>", self.mouse_leave)
+        self.bind("<Leave>", self.mouse_leave)
+
+        self.last_value:str|None = None
         self.update_me()
+
+    def mouse_move(self, event):
+        # Identify the listbox item index nearest to the cursor's Y coordinate
+        if not self.lb_up: return
+        current_index = self.lb.nearest(event.y)
+
+        # If the mouse moves to a different item, update the colors
+        if current_index != self.last_hovered:
+            # Reset the background of the item the mouse just left
+            if self.last_hovered is not None:
+                self.lb.itemconfig(self.last_hovered, bg=theme.current['background'], fg=theme.current['foreground'])
+
+            # Apply the hover background color to the current item
+            self.lb.itemconfig(current_index, background=theme.current['activebackground'], fg=theme.current['activeforeground'])
+            self.last_hovered = current_index
+
+    def mouse_leave(self, event):
+        # Reset the remaining highlighted item when the mouse exits the widget entirely
+        if not self.lb_up or self.last_hovered is None: return
+
+        self.lb.itemconfig(self.last_hovered, bg=theme.current['background'], fg=theme.current['foreground'])
+        self.last_hovered = None
 
     def ac_focus_out(self, event=None) -> None:
         x, y = self.parent.winfo_pointerxy()
@@ -69,6 +99,11 @@ class Autocompleter(Placeholder):
 
     def changed(self, name=None, index=None, mode=None) -> None:
         value:str = self.var.get()
+        # A StringVar write trace fires even on a no-op .set(), e.g. from tab-switch sync.
+        if value == self.last_value:
+            return
+        self.last_value = value
+
         if value.__len__() < 3 and self.lb_up or self.has_selected:
             self.hide_list()
             self.has_selected = False
@@ -77,58 +112,62 @@ class Autocompleter(Placeholder):
             t.start()
 
     def selection(self, event=None) -> None:
-        if self.lb_up:
-            self.has_selected = True
-            index = self.lb.curselection()
-            self.var.trace_remove("write", self.traceid)
+        if not self.lb_up: return
+        self.has_selected = True
+        index = self.lb.curselection()
+        self.var.trace_remove("write", self.traceid)
 
-            self.var.set(self.lb.get(index))
-            self.hide_list()
-            self.icursor(tk.END)
-            self.traceid = self.var.trace_add('write', self.changed)
+        self.var.set(self.lb.get(index))
+        self.last_value = self.var.get()
+        self.hide_list()
+        self.icursor(tk.END)
+        self.traceid = self.var.trace_add('write', self.changed)
 
     def up(self, widget) -> None:
-        if self.lb_up:
-            if self.lb.curselection() == ():
-                index = '0'
-            else:
-                index = self.lb.curselection()[0]
-            if index != '0':
-                self.lb.selection_clear(first=index)
-                index = str(int(index) - 1)
-                self.lb.selection_set(first=index)
-                if widget != "listbox":
-                    self.lb.activate(index)
-
-    def down(self, widget) -> None:
-        if self.lb_up:
-            if self.lb.curselection() == ():
-                index = '0'
-            else:
-                index = self.lb.curselection()[0]
-                if int(index + 1) != tk.END:
-                    self.lb.selection_clear(first=index)
-                    index = str(int(index + 1))
-
+        if not self.lb_up: return
+        if self.lb.curselection() == ():
+            index = '0'
+        else:
+            index = self.lb.curselection()[0]
+        if index != '0':
+            self.lb.selection_clear(first=index)
+            index = str(int(index) - 1)
             self.lb.selection_set(first=index)
             if widget != "listbox":
                 self.lb.activate(index)
-        else:
-            self.changed()
 
-    def show_results(self, results) -> None:
+    def down(self, widget) -> None:
+        if not self.lb_up: return self.changed()
+
+        if self.lb.curselection() == ():
+            index = '0'
+        else:
+            index = self.lb.curselection()[0]
+            if int(index + 1) != tk.END:
+                self.lb.selection_clear(first=index)
+                index = str(int(index + 1))
+
+        self.lb.selection_set(first=index)
+        if widget != "listbox":
+            self.lb.activate(index)
+
+    @catch_exceptions
+    def show_results(self, results:list[str]) -> None:
         if results:
+            width:int = self.lb["width"]
             self.lb.delete(0, tk.END)
             for w in results:
                 self.lb.insert(tk.END, w)
+                width = max(width, len(w.rstrip()))
 
-            self.show_list(len(results))
+            self.show_list(len(results), width)
         else:
             if self.lb_up:
                 self.hide_list()
 
-    def show_list(self, height) -> None:
+    def show_list(self, height, width) -> None:
         self.lb["height"] = height
+        self.lb["width"] = width
         if not self.lb_up and self.parent.focus_get() is self:
             self.popup.configure(bg=theme.current['background'])
             self.lb.configure(bg=theme.current['background'], fg=theme.current['foreground'], selectbackground=theme.current['activebackground'], selectforeground=theme.current['activeforeground'])

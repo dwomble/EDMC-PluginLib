@@ -35,6 +35,7 @@ sys.path.insert(0, str(test_dir))
 
 import tests.edmc.requests
 from tests.edmc.TkScheduler import HarnessTkScheduler
+from tests.edmc.Clipboard import HarnessClipboard
 import tests.edmc.mocks as mocks
 from tests.edmc.monitor import monitor
 
@@ -136,6 +137,13 @@ class TestHarness:
                 atexit.register(self._tk_scheduler.uninstall)
                 self._atexit_registered = True
 
+        if not hasattr(self, 'clipboard'):
+            self.clipboard = HarnessClipboard()
+            self.clipboard.install()
+            if not hasattr(self, '_clipboard_atexit_registered'):
+                atexit.register(self.clipboard.uninstall)
+                self._clipboard_atexit_registered = True
+
         self._initialized = True
 
     @classmethod
@@ -152,6 +160,13 @@ class TestHarness:
             except Exception:
                 pass
             del instance._tk_scheduler
+
+        if hasattr(instance, 'clipboard'):
+            try:
+                instance.clipboard.uninstall()
+            except Exception:
+                pass
+            del instance.clipboard
 
         if hasattr(instance, 'root'):
             try:
@@ -246,7 +261,7 @@ class TestHarness:
 
     def assert_no_unhandled_exceptions(self) -> None:
         """Fail the current test if any unhandled thread exceptions were captured."""
-        self._pump_ui(timeout_s=0.4)
+        self._pump_ui(timeout_s=0.25)
 
         scheduler_failures: list[str] = []
         if hasattr(self, '_tk_scheduler'):
@@ -372,7 +387,7 @@ class TestHarness:
                 raise
         self._pump_ui()
 
-    def play_sequence(self, name:str, delay:float = 0.5, state:dict = {}) -> None:
+    def play_sequence(self, name:str, delay:float = 0.2, state:dict = {}) -> None:
         """ Fire a sequence of events """
         for event in self.events.get(name, []):
             self.fire_event(event, state=state)

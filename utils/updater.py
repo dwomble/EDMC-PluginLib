@@ -2,9 +2,16 @@ import json
 import os
 import requests
 import zipfile
+import time
 from threading import Thread
 from semantic_version import Version # type: ignore
+
+from config import config # type: ignore
+
 from utils.debug import Debug
+
+# Check for updates at most once per day
+UPDATE_CHECK_INTERVAL:int = (3600 * 24)
 
 TIMEOUT=10
 
@@ -141,5 +148,11 @@ class Updater():
 
     def check_for_update(self, version:Version) -> None:
         """ Start an update check thread """
-        thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update checker")
+        last:int = config.get_int(f"{self.gh_project}_last_update_check", 0)
+        if last >= int(time.time()) - UPDATE_CHECK_INTERVAL: # Check for updates at most once per interval
+            return
+
+        config.set(f"{self.gh_project}_last_update_check", int(time.time()))
+
+        thread:Thread = Thread(target=self._check_update, args=[version], name=f"{self.gh_project} update checker")
         thread.start()
