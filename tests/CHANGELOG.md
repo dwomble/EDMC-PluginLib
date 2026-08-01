@@ -23,11 +23,16 @@
 ### Changes
 
 * The updater now has a configurable re-check frequency limit
+* Added richtext support to tooltips
+* Added mock get_bool and get_list config methods
+* Added mock EDMC-Hotkeys support
+* Added enable/disable overlay test support
+* Improved l10n mock support
+* Added mock support for tk clipboard
 
 ### Bug Fixes
 
 * Fixed various placeholder and autocomplete issues with different EDMC theme modes
-* Added mock support for tk clipboard
 
 ## v0.1.0 2026-04-15
 
