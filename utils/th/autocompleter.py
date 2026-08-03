@@ -1,11 +1,12 @@
 import queue
 import threading
 import tkinter as tk
+from tkinter import font as tkfont
 
 from theme import theme # type: ignore
 from config import config # type: ignore
 
-from utils.debug import catch_exceptions
+from utils.debug import Debug, catch_exceptions
 from .placeholder import Placeholder
 
 class Autocompleter(Placeholder):
@@ -18,6 +19,8 @@ class Autocompleter(Placeholder):
             :param func: The function to call to get a list of suggestions which should
                             take a single string argument (the current input) and return a list of suggestions.
     """
+    LOOKUP_TIMEOUT:float = 3
+
     def __init__(self, parent:tk.Frame, placeholder:str, **kw) -> None:
         self.parent:tk.Frame = parent
         self.func = None
@@ -33,6 +36,7 @@ class Autocompleter(Placeholder):
 
         self.popup:tk.Toplevel = tk.Toplevel(self.parent.winfo_toplevel())
         self.popup.wm_overrideredirect(True)
+        #theme.update(self.popup)
         self.lb:tk.Listbox = tk.Listbox(self.popup, selectmode=tk.SINGLE, **kw)
         theme.update(self.lb)
 
@@ -68,7 +72,7 @@ class Autocompleter(Placeholder):
                 self.lb.itemconfig(self.last_hovered, bg=theme.current['background'], fg=theme.current['foreground'])
 
             # Apply the hover background color to the current item
-            self.lb.itemconfig(current_index, background=theme.current['activebackground'], fg=theme.current['activeforeground'])
+            self.lb .itemconfig(current_index, background=theme.current['activebackground'], fg=theme.current['activeforeground'])
             self.last_hovered = current_index
 
     def mouse_leave(self, event):
@@ -170,7 +174,7 @@ class Autocompleter(Placeholder):
         self.lb["width"] = width
         if not self.lb_up and self.parent.focus_get() is self:
             self.popup.configure(bg=theme.current['background'])
-            self.lb.configure(bg=theme.current['background'], fg=theme.current['foreground'], selectbackground=theme.current['activebackground'], selectforeground=theme.current['activeforeground'])
+            self.lb.configure(bg=theme.current['background'], fg=theme.current['foreground'], highlightbackground=theme.current['activebackground'], highlightcolor=theme.current['activeforeground'])
             x:int = self.winfo_rootx()
             y:int = self.winfo_rooty() + self.winfo_height()
             self.popup.wm_geometry(f"+{x}+{y}")
@@ -184,10 +188,22 @@ class Autocompleter(Placeholder):
 
     def get_list(self, inp:str) -> None:
         inp = inp.strip()
-        if inp != self.placeholder and inp.__len__() >= 3 and self.func != None:
-            lista:list = self.func(inp)
-            if lista:
-                self.queue.put(lista)
+        func = self.func
+        if inp == self.placeholder or inp.__len__() < 3 or func == None:
+            return
+
+        result:list = []
+        def call() -> None:
+            result.extend(func(inp) or [])
+        t = threading.Thread(target=call, daemon=True)
+        t.start()
+        t.join(self.LOOKUP_TIMEOUT)
+        if t.is_alive():
+            Debug.logger.error(f"Autocompleter lookup timed out after {self.LOOKUP_TIMEOUT}s for {inp!r}")
+            return
+
+        if result:
+            self.queue.put(result)
 
     def update_me(self) -> None:
         try:
