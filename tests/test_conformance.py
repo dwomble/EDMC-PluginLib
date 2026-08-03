@@ -9,9 +9,7 @@ import pytest
 from typing import Generator
 import json
 
-from typing import TYPE_CHECKING, Generator
-if TYPE_CHECKING:
-    from harness import TestHarness, reset_plugin_modules
+from harness import TestHarness, reset_plugin_modules
 
 from .edmc import edmc_data
 from .edmc.requests import queue_response, MockResponse
