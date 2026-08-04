@@ -8,7 +8,7 @@ from semantic_version import Version # type: ignore
 
 from config import config # type: ignore
 
-from utils.debug import Debug
+from .debug import Debug
 
 # Check for updates at most once per day
 UPDATE_CHECK_INTERVAL:int = (3600 * 24)
@@ -24,19 +24,13 @@ class Updater():
     gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
     Call check_for_update(version) at plugin startup. It's asynchronous.
     Call install() to install the update when you choose (commonly on shutdown).
+
+    Not a singleton: EDMC loads every plugin into one process, and since each plugin
+    constructs its own Updater for its own plugin_dir/gh_project, a shared/global instance
+    here would mean the second plugin to construct one silently gets the first plugin's
+    already-initialized instance instead of its own -- construct one per plugin as needed.
     """
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
     def __init__(self, plugin_dir:str, gh_project:str, gh_release_info:str='') -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
-
         self.plugin_dir:str = plugin_dir
         self.gh_project:str = gh_project
         self.gh_release_info:str = gh_release_info
@@ -51,9 +45,6 @@ class Updater():
         self.download_url:str = ""
         self.zip_downloaded:str = "" # ZIP file that was downloaded
 
-        # Make sure we're actually initialized
-        self._initialized = True
-
     def download_zip(self) -> None:
         """ Download the zipfile of the latest version """
 
@@ -66,11 +57,12 @@ class Updater():
             self.zip_downloaded = zip_file
             return
 
+        r:requests.Response|None = None
         try:
-            r:requests.Response = requests.get(self.download_url, headers={'User-Agent': 'EDMC-PluginLib Updater'}, timeout=TIMEOUT)
+            r = requests.get(self.download_url, headers={'User-Agent': 'EDMC-PluginLib Updater'}, timeout=TIMEOUT)
             r.raise_for_status()
         except Exception:
-            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code}).)")
+            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'no response'}).")
             return
 
         with open(zip_file, 'wb') as f:

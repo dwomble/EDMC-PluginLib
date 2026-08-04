@@ -6,7 +6,7 @@ from tkinter import font as tkfont
 from theme import theme # type: ignore
 from config import config # type: ignore
 
-from utils.debug import Debug, catch_exceptions
+from ..debug import Debug, catch_exceptions
 from .placeholder import Placeholder
 
 class Autocompleter(Placeholder):

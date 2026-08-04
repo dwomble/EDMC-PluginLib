@@ -1,8 +1,8 @@
 # General purpose 'tooltip' routines -- Tooltip/TooltipBase are aware of th.Base's light/dark
 # widget pairs (binding to both halves); TreeTooltip is a separate helper for Treeview widgets.
 
-from utils.debug import catch_exceptions
-from utils.tkrichtext import RichLabel
+from ..debug import catch_exceptions
+from ..tkrichtext import RichLabel
 import tkinter as tk
 from tkinter import ttk
 from typing import Optional, Tuple
@@ -98,8 +98,8 @@ class Tooltip(TooltipBase):
         if text != '':
             self.args['text'] = text
 
-    def showcontents(self):
-        TooltipBase.showcontents(self, **self.args)
+    def showcontents(self, **kwargs):
+        super().showcontents(**{**self.args, **kwargs})
 
 
 class TreeTooltip:

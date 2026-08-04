@@ -12,7 +12,7 @@ import threading
 
 import tkinter as tk
 
-from utils.debug import Debug, catch_exceptions
+from .debug import Debug, catch_exceptions
 
 
 """ Class decorators """
