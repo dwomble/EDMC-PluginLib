@@ -1,8 +1,8 @@
 """
-Test suite for an EDMC plugin using pytest.
+General/miscellaneous tests for an EDMC plugin using pytest.
 
 Run with:
-    .venv/bin/python -m pytest tests/test_conformance.py -v --tb=short
+    .venv/bin/python -m pytest tests/test_misc.py -v --tb=short
 
 """
 import pytest

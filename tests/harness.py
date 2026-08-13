@@ -78,6 +78,11 @@ class TestHarness:
     __test__ = False
     _instance = None
 
+    # A tk.Canvas widget (e.g. utils.th.ScrollableFrame) hangs on .update() if it's created in
+    # any tk.Tk() root other than the FIRST one this process ever made. One root, kept alive for the
+    # whole process fixes this.
+    _shared_root:tk.Tk|None = None
+
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -121,12 +126,15 @@ class TestHarness:
             self._original_threading_excepthook = threading.excepthook
         threading.excepthook = self._capture_thread_exception
 
-        # Create Tk root for headless mode
+        # Create Tk root for headless mode -- reuse the one shared root for the whole process
         try:
             if not hasattr(self, '_initialized'):
-                self.root:tk.Tk = tk.Tk()
+                if TestHarness._shared_root is None:
+                    TestHarness._shared_root = tk.Tk()
+                    TestHarness._shared_root.withdraw()
+                    atexit.register(TestHarness._destroy_shared_root)
+                self.root:tk.Tk = TestHarness._shared_root
                 self.parent:tk.Frame = tk.Frame(self.root)
-                self.root.withdraw()
         except Exception as e:
             logging.error(f"Failed to create Tk root: {e}")
 
@@ -168,9 +176,11 @@ class TestHarness:
                 pass
             del instance.clipboard
 
-        if hasattr(instance, 'root'):
+        # Destroy only the per-test parent frame, NOT the shared root (see _shared_root) --
+        # this is what actually clears out the previous test's widget tree.
+        if hasattr(instance, 'parent'):
             try:
-                instance.root.destroy()
+                instance.parent.destroy()
             except Exception:
                 pass
 
@@ -178,6 +188,16 @@ class TestHarness:
             threading.excepthook = instance._original_threading_excepthook
 
         cls._instance = None
+
+    @classmethod
+    def _destroy_shared_root(cls) -> None:
+        """ Process-exit cleanup for the one Tk root shared across the whole test run. """
+        if cls._shared_root is not None:
+            try:
+                cls._shared_root.destroy()
+            except Exception:
+                pass
+            cls._shared_root = None
 
     def set_requests_mode(self, live_requests:bool) -> None:
         """ Set whether the harness should use live HTTPS requests or mocked responses. """

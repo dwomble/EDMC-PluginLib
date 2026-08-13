@@ -1,16 +1,15 @@
 """
-Unit tests for utils.th.ScrollableFrame.
+Unit tests for utils.th
 
 Run with:
     .venv/bin/python -m pytest tests/test_th_scrollableframe.py -v --tb=short
 
-Note: the harness fixture here is module-scoped (one shared Tk root for the whole file, one
-ScrollableFrame per test function within it) rather than the usual per-test TestHarness
-reset+recreate. Repeatedly creating/destroying a tk.Tk() root with Canvas+ttk.Scrollbar
-widgets across many tests in the same process has been observed to hang on the second such
-test under this harness/environment (ui_scale=120 on macOS Aqua) -- reproduced with a bare
-Canvas+Scrollbar+Label combination with none of this module's own logic involved, so it's a
-harness/platform fragility, not something to work around inside ScrollableFrame itself.
+A tk.Canvas widget (this module builds one per ScrollableFrame) hangs on .update() if it's
+created in any tk.Tk() root other than the FIRST one the process ever made -- an observed
+platform/Tk quirk (macOS Aqua + ui_scale=120), reproduced with a bare Canvas+Scrollbar+Label,
+no ScrollableFrame logic involved. TestHarness works around this at the source (see
+harness.py's `_shared_root`): one root is kept alive for the whole test process regardless of
+how many times reset_instance() runs, so a normal per-test reset+recreate here is safe.
 """
 import pytest
 import tkinter as tk
@@ -18,11 +17,11 @@ from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
 
-from utils.th import ScrollableFrame
+from utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
-    """ One shared bare harness for the whole file -- see module docstring for why. """
+    """ A fresh per-test harness, same pattern as the other test files. """
     TestHarness.reset_instance()
     reset_plugin_modules()
     test_harness = TestHarness()
@@ -46,7 +45,7 @@ def _add_line(harness:TestHarness, sf:ScrollableFrame, text:str = "line") -> Non
     tk.Label(sf.interior, text=text, height=1).pack(fill="x")
     _pump(harness)
 
-class TestScrollableFrame:
+class Testth:
 
     def test_no_scrollbar_when_content_fits(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, max_height=200)
@@ -106,6 +105,40 @@ class TestScrollableFrame:
         sf._unbind_mousewheel()
         assert sf._canvas.bind_all("<MouseWheel>") == ""
         sf.destroy()
+
+class TestPlainWidgets:
+    """ Frame/Label/TopLevel are real single widgets, not light/dark pairs. """
+
+    def test_frame(self, harness:TestHarness) -> None:
+        f = Frame(harness.parent)
+        assert isinstance(f, tk.Frame)
+
+    def test_label(self, harness:TestHarness) -> None:
+        lbl = Label(harness.parent, text="hi")
+        assert lbl["text"] == "hi"
+
+    def test_toplevel(self, harness:TestHarness) -> None:
+        # Regression: TopLevel used to call theme.update(self), which raises since
+        # tk.Toplevel isn't a tk.Widget subclass.
+        top = TopLevel(harness.parent)
+        assert isinstance(top, tk.Toplevel)
+        top.destroy()
+
+class TestThemedPairWidgets:
+    """ Button/Checkbutton are light/dark pairs -- only one half should ever be gridded. """
+
+    def test_button_grid(self, harness:TestHarness) -> None:
+        btn = Button(harness.parent, text="Go")
+        btn.grid()
+        managers = {btn.obj.winfo_manager(), btn.alt.winfo_manager()}
+        assert managers == {"grid", ""}
+
+    def test_checkbutton(self, harness:TestHarness) -> None:
+        var = tk.BooleanVar(value=False)
+        cb = Checkbutton(harness.parent, variable=var)
+
+        # Variable should be shared between the two halves of the pair, so that checking one checks the other.
+        assert str(cb.obj["variable"]) == str(var) == str(cb.alt["variable"])
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
