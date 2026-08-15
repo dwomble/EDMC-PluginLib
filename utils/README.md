@@ -105,7 +105,7 @@ These are suitable for the main EDMC window and will adapt to regular, dark or t
 
 ### th.ScrollableFrame
 
-A themed frame whose `.interior` scrolls vertically once its content exceeds a `max_height`, hiding the scrollbar entirely while content fits. Use `.clear()` to replace all of `.interior`'s content in one shot rather than destroying its children individually.
+A themed frame whose `.interior` scrolls vertically once its content exceeds `maxheight`, hiding the scrollbar entirely while content fits. Use `.clear()` to replace all of `.interior`'s content in one shot rather than destroying its children individually.
 
 ### th.Placeholder
 
