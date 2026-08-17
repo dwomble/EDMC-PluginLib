@@ -19,23 +19,20 @@ class Updater():
     """
     Handle checking for, and installing, plugin updates.
 
-    Create the object with parameters plugin_dir, gh_project, gh_release_info.
+    Create the object with parameters plugin_dir, gh_owner, gh_project, gh_release_info.
+      gh_owner is the github owner/org, e.g. "coder"
       gh_project is the github project name, e.g. "my-plugin"
-    gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
+      gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
     Call check_for_update(version) at plugin startup. It's asynchronous.
     Call install() to install the update when you choose (commonly on shutdown).
-
-    Not a singleton: EDMC loads every plugin into one process, and since each plugin
-    constructs its own Updater for its own plugin_dir/gh_project, a shared/global instance
-    here would mean the second plugin to construct one silently gets the first plugin's
-    already-initialized instance instead of its own -- construct one per plugin as needed.
     """
-    def __init__(self, plugin_dir:str, gh_project:str, gh_release_info:str='') -> None:
+    def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str, gh_release_info:str='') -> None:
         self.plugin_dir:str = plugin_dir
+        self.gh_owner:str = gh_owner
         self.gh_project:str = gh_project
         self.gh_release_info:str = gh_release_info
         if self.gh_release_info == '':
-            self.gh_release_info = f'https://api.github.com/repos/coder/{self.gh_project}/releases/latest'
+            self.gh_release_info = f'https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest'
 
         self.update_available:bool = False # Is there an update available?
         self.install_update:bool = False # Should it be installed?
@@ -62,7 +59,7 @@ class Updater():
             r = requests.get(self.download_url, headers={'User-Agent': 'EDMC-PluginLib Updater'}, timeout=TIMEOUT)
             r.raise_for_status()
         except Exception:
-            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'no response'}).")
+            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'N/A'}).)")
             return
 
         with open(zip_file, 'wb') as f:
@@ -136,7 +133,6 @@ class Updater():
 
         except Exception as e:
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)
-
 
     def check_for_update(self, version:Version) -> None:
         """ Start an update check thread """

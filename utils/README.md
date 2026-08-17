@@ -1,24 +1,8 @@
 # EDMC Plugin Utilities
 
-A Library of useful utilities for EDMC plugins. Some are drop-in ready to go, some may require some configuration, and others may need adapting to your plugin.
+A Library of useful utilities for EDMC plugins.
 
-## debug
-
-A class for EDMC logging that automatically registers a debug handler and adjusts the debug level dependent on whether the plugin is in development mode and a decorator to automatically catch and log runtime errors.
-
-```python
-from utils.debug import Debug, catch_exceptions
-
-Debug(plugin_dir, dev_mode)
-Debug.logger.debug(f"debug message {param}")
-
-@catch_exceptions
-my_func()
-    " My function "
-    return 23 / 0
-```
-
-## updater
+## Updater
 
 A class to check if a new release of the plugin is available, download the zip asset, and install it on exit.
 
@@ -34,74 +18,31 @@ def plugin_stop() -> None:
         updater.install()
 ```
 
-## dateutil
+## Debug
 
-(python-dateutil)<https://github.com/dateutil/dateutil> modified to run in and EDMC plugin. Provides powerful date parsing and delta functions.
-
-```python
-from utils.dateutil.parser import parse
-
-date = parse(string)
-```
-
-See [https://dateutil.readthedocs.io/en/stable/index.html] for detailed documentation.
-
-## copy_to_clipboard
-
-A cross-platform method to copy text into the system paste buffer including environment variable support for unusual situations.
+A class for EDMC logging that automatically registers a debug handler and adjusts the debug level dependent on whether the plugin is in development mode and a decorator to automatically catch and log runtime errors.
 
 ```python
-from utils.misc import copy_to_clipboard
+from utils.debug import Debug, catch_exceptions
 
-copy_to_clipboard("Some text")
+Debug(plugin_dir, dev_mode)
+Debug.logger.debug(f"debug message {param}")
+
+@catch_exceptions
+my_func()
+    " My function "
+    return 23 / 0
 ```
 
-## get_by_path
+## An EDMC-theme aware library of tk objects
 
-Method to retrieve a value from a a nested object by item sequence.
+These are suitable for the main EDMC window and will automatically adapt to regular, dark or transparent modes. Just like EDMC they use ttk objects where possible for light mode and tk equivalents for dark and transparent.
 
-```python
-from utils.misc import get_by_path
+Note they only support `grid` not `pack` layout
 
-val = get_by_path(mydict, ['level1', 'level2'], 0)
-```
+### Standard tk
 
-## Singleton
-
-A thread-safe singleton decorator.
-
-```python
-from utils.misc import singleton
-
-@singleton
-class my_singleton:
-    __init__():
-        pass
-
-x = my_singleton()
-y = my_singleton()
-x == y
-```
-
-## th – an EDMC-theme aware library of tk objects
-
-These are suitable for the main EDMC window and will adapt to regular, dark or transparent modes. Note they only support `grid` not `pack` layout
-
-* TopLevel
-* Frame
-* LabelFrame
-* ScrollableFrame
-* Label
-* Button
-* Radiobutton
-* ComboBox
-* Listbox
-* Checkbutton
-* Scale
-* Spinbox
-* Tooltip
-* Autocompleter
-* Placeholder
+Theme-aware versions of the following standard objects: TopLevel, Frame, LabelFrame, Label, Entry, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox.
 
 ### th.ScrollableFrame
 
@@ -109,19 +50,21 @@ A themed frame whose `.interior` scrolls vertically once its content exceeds `ma
 
 ### th.Placeholder
 
-An entry class that includes a placeholder value.
+An themed tk.Entry class that includes a placeholder value and popup menu.
 
 ```python
-my_field:th.Placeholder = th.Placeholder(frame, "Placeholder text")
+mymenu:dict = {
+    "Source": [ self.set_source, "src"],
+    "Destination": [self.destination_func, "dest"]
+}
+my_field:th.Placeholder = th.Placeholder(frame, "Placeholder text", menu=mymenu)
 ```
 
 ### th.Autocompleter
 
-An Entry class that supports placeholder text and a callback function to provide autocomplete functionality.
+An themed tk.Entry class that supports placeholder text and a callback function to provide autocomplete functionality.
 
 ```python
-import plugin.utils.th as th
-
 def callback(inp:str) -> list:
     """ Function called by Autocompleter """
     try:
@@ -133,7 +76,26 @@ def callback(inp:str) -> list:
 label:th.Autocompleter = th.Autocompleter(frame, "Placeholder", width=30, func=callback)
 ```
 
-## TreeviewPlus
+### th.Tooltip
+
+A popup tooltip for any th object.
+
+```python
+th.Tooltip(my_label, "My tooltip string")
+```
+
+## Richtext tk objects
+
+tk objects to directly render Markdown or HTML text in EDMC. Provides `RichScrolledText`, `RichText`, and `RichLabel`
+
+```python
+from utils.tkrichtext import RichScrolledText
+
+rt:RichScrolledText = RichScrolledText(frame, markdown="#Heading\nSome text...")
+rt.pack(fill="both", expand=True, ipadx=5, ipady=5)
+```
+
+## Enhanced Treeview
 
 A standalone treeview that functions like a normal ttk Treeview object but with sortable columns and a callback for when an item is clicked.
 
@@ -150,21 +112,67 @@ tree.heading("two", text="Text", sort_by="name")
 tree.heading("three", text="Count", sort_by="num")
 ```
 
-## SrollableNotebook
+## ScrollableNotebook
 
 A ttk Notebook with scrollable tabs.
-
-## tkRichText
-
-tk objects to directly render Markdown or HTML text in EDMC. Provides `RichScrolledText`, `RichText`, and `RichLabel`
-
-```python
-from utils.tkrichtext import RichScrolledText
-
-tkobj:RichScrolledText = RichScrolledText(frame, markdown="#Heading\nSome text...")
-tkobj.pack(fill="both", expand=True, ipadx=5, ipady=5)
-```
 
 ## Overlay
 
 a thin wrapper that detects whichever overlay backend is installed (classic `EDMCOverlay`, or EDMCModernOverlay's `edmcoverlay`-compatible transport plus its `define_plugin_group` layout API) and exposes `send_text`/`send_shape`/`send_vect`/`define_group` primitives that no-op cleanly when no overlay is running.
+
+## Miscellaneous
+
+### Date utilities
+
+(python-dateutil)<https://github.com/dateutil/dateutil> modified to run in and EDMC plugin. Provides powerful date parsing and delta functions.
+
+```python
+from utils.dateutil.parser import parse
+
+date = parse(string)
+```
+
+See [https://dateutil.readthedocs.io/en/stable/index.html] for detailed documentation.
+
+### Clipboard copy
+
+A cross-platform method to copy text into the system paste buffer including environment variable support for unusual situations.
+
+```python
+from utils.misc import copy_to_clipboard
+
+copy_to_clipboard("Some text")
+```
+
+### Nested object retrieval
+
+Method to retrieve a value from a a nested object by item sequence.
+
+```python
+from utils.misc import get_by_path
+
+val = get_by_path(mydict, ['level1', 'level2'], 0)
+```
+
+### Singleton decorator
+
+A thread-safe singleton decorator.
+
+```python
+from utils.misc import singleton
+
+@singleton
+class my_singleton:
+    __init__():
+        pass
+
+x = my_singleton()
+y = my_singleton()
+x == y
+```
+
+## Where to copy `utils/` into your plugin
+
+**Copy it under your plugin's own top-level package -- not into your plugin's root directory.** For example, if your plugin's own code lives under `myplugin/`, copy this library's `utils/` folder to `myplugin/utils/` (and import it as `from myplugin.utils.th import Frame`, etc.), rather than dropping a bare `utils/` folder next to `load.py`.
+
+Why this matters: EDMC loads every installed plugin into the *same* Python process, adding each plugin's directory to a shared `sys.path`. If a user has two plugins using this library only the *first* one will ever be used. Nesting under your plugin's own (already-unique) package name avoids this.

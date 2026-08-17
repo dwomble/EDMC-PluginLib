@@ -20,6 +20,7 @@ PLUGIN_NAME = "DummyPlugin"
 PLUGIN_VERSION = semantic_version.Version.coerce("0.0.1-dev")
 VERSION = str(PLUGIN_VERSION) # For compatability with the EDMC Plugin Registry
 
+GH_OWNER = "dwomble" # Github owner name
 GH_PROJECT = 'EDMC-DummyPlugin' #  Github project name
 
 @dataclass
@@ -65,7 +66,7 @@ def get_overlay(modern:bool):
 def plugin_start3(plugin_dir):
     """ Load this plugin into EDMC """
     plugin.plugin_dir = plugin_dir
-    plugin.updater = Updater(str(plugin.plugin_dir), GH_PROJECT)
+    plugin.updater = Updater(str(plugin.plugin_dir), GH_OWNER, GH_PROJECT)
     # Let's not since this is a dummy plugin
     #plugin.updater.check_for_update(PLUGIN_VERSION)
 

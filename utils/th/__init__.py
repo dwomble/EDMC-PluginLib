@@ -166,6 +166,16 @@ class Label(tk.Label):
         tk.Label.__init__(self, master, **kw)
         theme.update(self)
 
+class Entry(Base):
+    """ A themed entry that can switch between light and dark mode. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        ent:ttk.Entry = ttk.Entry(master, **kw)
+        if 'relief' not in kw:
+            kw['relief'] = tk.GROOVE
+        alt:tk.Entry = tk.Entry(master, **_strip_name(kw))
+        super().__init__(ent, alt)
+        theme.update(self)
+
 class Button(Base):
     """ A themed button that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
