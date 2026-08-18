@@ -22,7 +22,7 @@ def de_locale() -> Generator[None, None, None]:
     yield
     locale.setlocale(locale.LC_ALL, saved)
 
-class TestHfplusNumbersUnderCLocale:
+class TestHfplus:
     """ 'C' is always available -- the deterministic, portable baseline. """
 
     def test_no_grouping_separator_under_c_locale(self) -> None:
@@ -42,8 +42,6 @@ class TestHfplusNumbersUnderCLocale:
     def test_abbreviated_number_under_c_locale(self) -> None:
         assert hfplus((15_000_000, 'num', '?', ' Cr')) == "15M Cr"
 
-class TestHfplusNumbersUnderAnotherLocale:
-
     def test_groups_thousands_with_the_locale_separator(self, de_locale) -> None:
         assert hfplus((1234.5, 'float', '?', '')) == "1.234"
 
@@ -53,13 +51,8 @@ class TestHfplusNumbersUnderAnotherLocale:
     def test_abbreviated_number_uses_the_locale_decimal_point(self, de_locale) -> None:
         assert hfplus((12_345, 'num', '?', ' Cr')) == "12,3K Cr"
 
-class TestHfplusDatetime:
-
     def test_drops_seconds_regardless_of_locale(self) -> None:
         assert hfplus(('2026-08-17 14:30:45', 'datetime')) == "08/17/26 14:30"
 
     def test_date_portion_follows_the_locale(self, de_locale) -> None:
         assert hfplus(('2026-08-17 14:30:00', 'datetime')) == "17.08.2026 14:30"
-
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '--tb=short'])
