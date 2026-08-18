@@ -2,34 +2,56 @@ import json
 import os
 import requests
 import zipfile
+import time
 from threading import Thread
 from semantic_version import Version # type: ignore
-from utils.debug import Debug
+
+from config import config, user_agent # type: ignore
+from timeout_session import new_session # type: ignore
+
+from .debug import Debug
+
+# Check for updates at most once per day
+UPDATE_CHECK_INTERVAL:int = (3600 * 24)
 
 TIMEOUT=10
-GH_PROJECT = '' # Set your github project name here, e.g. "NeutronDancer"
-GH_RELEASE_INFO = '' # Set the github api url for release info, e.g. "https://api.github.com/repos/NeutronDancer/EDMC-PluginLib/releases/latest"
+
+def _headers(gh_project:str) -> dict:
+    """ Blends into EDMC's own UA, per PLUGINS.md. """
+    return {'User-Agent': f'{user_agent} {gh_project}-Updater'}
+
+def read_version_file(plugin_dir:str, default:str) -> Version:
+    """ Reads the "version" file install() writes -- also
+    stamped by CI at release, so a fresh install has one. """
+    version_file:str = os.path.join(plugin_dir, "version")
+    if os.path.isfile(version_file):
+        with open(version_file) as f:
+            text:str = f.read().strip()
+        if text:
+            try:
+                return Version.coerce(text)
+            except ValueError:
+                pass
+    return Version.coerce(default)
 
 class Updater():
     """
     Handle checking for, and installing, plugin updates.
 
-    Call check_for_update() at plugin startup. It's asynchronous.
+    Create the object with parameters plugin_dir, gh_owner, gh_project, gh_release_info.
+      gh_owner is the github owner/org, e.g. "coder"
+      gh_project is the github project name, e.g. "my-plugin"
+      gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
+    Call check_for_update(version) at plugin startup. It's asynchronous.
     Call install() to install the update when you choose (commonly on shutdown).
     """
-    # Singleton pattern
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    def __init__(self, plugin_dir:str='') -> None:
-        # Only initialize if it's the first time
-        if hasattr(self, '_initialized'): return
-
-        if plugin_dir != '': self.plugin_dir:str = plugin_dir
+    def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str, gh_release_info:str='') -> None:
+        self.plugin_dir:str = plugin_dir
+        self.gh_owner:str = gh_owner
+        self.gh_project:str = gh_project
+        self.gh_release_info:str = gh_release_info
+        if self.gh_release_info == '':
+            self.gh_release_info = f'https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest'
 
         self.update_available:bool = False # Is there an update available?
         self.install_update:bool = False # Should it be installed?
@@ -39,28 +61,25 @@ class Updater():
         self.download_url:str = ""
         self.zip_downloaded:str = "" # ZIP file that was downloaded
 
-        # Make sure we're actually initialized
-        if self.plugin_dir != '':
-            self._initialized = True
-
-
     def download_zip(self) -> None:
         """ Download the zipfile of the latest version """
 
         self.zip_path:str = os.path.join(self.plugin_dir, "updates")
         os.makedirs(self.zip_path, exist_ok=True)
 
-        zip_file:str = os.path.join(self.zip_path, f"{GH_PROJECT}-{str(self.update_version)}.zip")
+        zip_file:str = os.path.join(self.zip_path, f"{self.gh_project}-{str(self.update_version)}.zip")
         # Don't download again if we already have it. (Was os.remove(zip_file))
         if os.path.exists(zip_file):
             self.zip_downloaded = zip_file
             return
 
+        r:requests.Response|None = None
         try:
-            r:requests.Response = requests.get(self.download_url)
+            session:requests.Session = new_session(timeout=TIMEOUT)
+            r = session.get(self.download_url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except Exception:
-            Debug.logger.error(f"Failed to download {GH_PROJECT} update (status code {r.status_code}).)")
+            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'N/A'}).)")
             return
 
         with open(zip_file, 'wb') as f:
@@ -84,8 +103,9 @@ class Updater():
     def get_release(self) -> bool:
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
-            Debug.logger.debug(f"Requesting {GH_RELEASE_INFO}")
-            r:requests.Response = requests.get(GH_RELEASE_INFO, timeout=TIMEOUT)
+            Debug.logger.debug(f"Requesting {self.gh_release_info}")
+            session:requests.Session = new_session(timeout=TIMEOUT)
+            r:requests.Response = session.get(self.gh_release_info, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)
@@ -135,8 +155,13 @@ class Updater():
         except Exception as e:
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)
 
-
     def check_for_update(self, version:Version) -> None:
         """ Start an update check thread """
-        thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update checker")
+        last:int = config.get_int(f"{self.gh_project}_last_update_check", 0)
+        if last >= int(time.time()) - UPDATE_CHECK_INTERVAL: # Check for updates at most once per interval
+            return
+
+        config.set(f"{self.gh_project}_last_update_check", int(time.time()))
+
+        thread:Thread = Thread(target=self._check_update, args=[version], name=f"{self.gh_project} update checker")
         thread.start()

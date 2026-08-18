@@ -1,17 +1,17 @@
 """
-Test suite for and EDMC plugin using pytest.
+General/miscellaneous tests for an EDMC plugin using pytest.
 
 Run with:
-    .venv/bin/python -m pytest tests/test_plugin.py -v --tb=short
-or
-    .venv/bin/python -m pytest tests/test_basic.py
+    .venv/bin/python -m pytest tests/test_misc.py -v --tb=short
+
 """
 import pytest
 from typing import Generator
 import json
 
-from harness import TestHarness
-import load
+from harness import TestHarness, reset_plugin_modules
+
+from .edmc import edmc_data
 from .edmc.requests import queue_response, MockResponse
 import requests
 
@@ -22,22 +22,33 @@ def harness(request) -> Generator[TestHarness, None, None]:
 
     live = request.node.get_closest_marker('live_requests') is not None
 
-    test_harness = TestHarness(live_requests=live)
+    overlay = 'All'
+    if request.node.get_closest_marker('overlay'):
+        overlay = request.node.get_closest_marker('overlay').args[0]
 
-    from load import plugin_start3, plugin_app, journal_entry, capi_fleetcarrier
+    from harness import TestHarness, reset_plugin_modules
+    TestHarness.reset_instance()
+    reset_plugin_modules()
+    test_harness = TestHarness(live_requests=live, overlay=overlay)
 
+    from load import plugin_start3, plugin_app, journal_entry, dashboard_entry, capi_fleetcarrier, \
+                     plugin, dashboard, journal, carrier
     plugin_start3(str(test_harness.plugin_dir))
     plugin_app(test_harness.parent)
 
-    plugin = load.plugin
-    dashboard = load.dashboard
-    journal = load.journal
-    carrier = load.carrier
+    plugin = plugin
+    dashboard = dashboard
+    journal = journal
+    carrier = carrier
 
-    test_harness.load_events("journal_events.json")
     test_harness.register_journal_handler(journal_entry, 'Testy', 'Sol', False)
+    test_harness.register_dashboard_handler(dashboard_entry)
 
     yield test_harness
+
+    # Add any necessary teardown code here. The test harness will automatically clean up the plugin directory and restore mocks.
+    test_harness.assert_no_unhandled_exceptions()
+    TestHarness.reset_instance()
 
 class TestInitialization:
     """Test basic initialization features."""
@@ -57,16 +68,6 @@ class TestInitialization:
         assert plugin.parent == harness.parent
         assert plugin.frame is not None
 
-    def test_mock_config(self, harness:TestHarness) -> None:
-        """Test the mock config."""
-
-        harness.config.set('DummyPlugin_intval', 42)
-        harness.config.set('DummyPlugin_strval', "Hello, World!")
-
-        assert harness.config.get_str('DummyPlugin_status', default='Disabled') == 'Active'
-        assert harness.config.get_int('DummyPlugin_intval') == 42
-        assert harness.config.get_str('DummyPlugin_strval') == "Hello, World!"
-
     def test_load_state(self, harness:TestHarness) -> None:
         """Test that state files are loaded correctly."""
 
@@ -79,7 +80,49 @@ class TestInitialization:
         assert harness.monitor.state['Horizons'] == True
         assert harness.monitor.state['Odyssey'] == True
 
+class TestConfig:
+    """Test mock configuration handling."""
+
+    def test_str(self, harness:TestHarness) -> None:
+        """Test strings mock config."""
+
+        harness.config.set('DummyPlugin_strval', "Active")
+        assert harness.config.get_str('DummyPlugin_strval', default='None') == 'Active'
+
+    def test_int(self, harness:TestHarness) -> None:
+        """Test integer mock config."""
+
+        harness.config.set('DummyPlugin_intval', 42)
+        assert harness.config.get_int('DummyPlugin_intval') == 42
+
+    def test_bool(self, harness:TestHarness) -> None:
+        """Test boolean mock config."""
+
+        harness.config.set('DummyPlugin_boolval', True)
+        assert harness.config.get_bool('DummyPlugin_boolval') == True
+
+    def test_list(self, harness:TestHarness) -> None:
+        """Test list mock config."""
+
+        harness.config.set('DummyPlugin_listval', [1, 2, 3])
+        assert harness.config.get_list('DummyPlugin_listval') == [1, 2, 3]
+
+    def test_default(self, harness:TestHarness) -> None:
+        """Test default values for mock config."""
+
+        assert harness.config.get_str('DummyPlugin_nonexistent', default='None') == 'None'
+
+    def test_del(self, harness:TestHarness) -> None:
+        """Test deletes in mock config."""
+
+        harness.config.set('DummyPlugin_strval', "Active")
+        assert harness.config.get_str('DummyPlugin_strval', default='None') == 'Active'
+        harness.config.delete('DummyPlugin_strval')
+        assert harness.config.get_str('DummyPlugin_strval', default='None') == 'None'
+
 class TestHTTPRequests:
+    """Test mock and live HTTP requests."""
+
     def test_mock_http_requests(self, harness:TestHarness) -> None:
         """Test that mock requests work."""
 
@@ -111,6 +154,7 @@ class TestHTTPRequests:
         assert carrier.data == capi_data
 
 class TestJournalEvents:
+    """ Test journal event handling and state updates."""
 
     def test_null_event(self, harness) -> None:
         """ Just a music event to test the machinery of loading and playing events. """
@@ -179,6 +223,71 @@ class TestJournalEvents:
     def test_manual_only(self, harness) -> None:
         """ A demo slow test that won't be run by the unit-testing.yml. """
         assert True
+
+class TestDashboardEvents:
+    """Test dashboard event handling and state updates."""
+
+    def test_gui_event(self, harness) -> None:
+        """ Just a simple dashboard gui event. """
+
+        harness.fire_dashboard_event({"GuiFocus": edmc_data.GuiFocusGalaxyMap})
+
+        assert dashboard.cmdr == "Testy"
+        assert dashboard.is_beta == False
+        assert dashboard.entry['GuiFocus'] == edmc_data.GuiFocusGalaxyMap
+
+    def test_flags_event(self, harness) -> None:
+        """ Just a simple dashboard flags event. """
+
+        harness.fire_dashboard_event({"Flags": edmc_data.FlagsShieldsUp | edmc_data.FlagsSupercruise})
+
+        assert dashboard.cmdr == "Testy"
+        assert dashboard.is_beta == False
+        assert dashboard.entry['Flags'] & edmc_data.FlagsShieldsUp == edmc_data.FlagsShieldsUp
+        assert dashboard.entry['Flags'] & edmc_data.FlagsSupercruise == edmc_data.FlagsSupercruise
+        assert dashboard.entry['Flags'] & edmc_data.FlagsFlightAssistOff != edmc_data.FlagsFlightAssistOff
+
+    def test_flags2_event(self, harness) -> None:
+        """ Just a simple dashboard flags2 event. """
+
+        harness.fire_dashboard_event({"Flags2": edmc_data.Flags2OnFoot | edmc_data.Flags2LowOxygen})
+
+        assert dashboard.cmdr == "Testy"
+        assert dashboard.is_beta == False
+        assert dashboard.entry['Flags2'] & edmc_data.Flags2OnFoot == edmc_data.Flags2OnFoot
+        assert dashboard.entry['Flags2'] & edmc_data.Flags2LowOxygen == edmc_data.Flags2LowOxygen
+        assert dashboard.entry['Flags'] & edmc_data.Flags2OnFootInHangar != edmc_data.Flags2OnFootInHangar
+
+class TestOverlay:
+    """Test overlay functionality."""
+
+    @pytest.mark.overlay('None')
+    def test_no_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        from load import get_overlay
+        assert get_overlay(False) == None
+
+    @pytest.mark.overlay('Legacy')
+    def test_legacy_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        from load import get_overlay
+        assert get_overlay(False) is not None
+
+    @pytest.mark.overlay('Modern')
+    def test_modern_overlay(self, harness:TestHarness, monkeypatch) -> None:
+        """Ensure overlay is not present when overlay mode is disabled."""
+        from load import get_overlay
+        assert get_overlay(True) is not None
+
+    def test_overlay_functionality(self, harness:TestHarness, monkeypatch) -> None:
+        """ Test overlay functionality. """
+        from load import get_overlay
+        overlay = get_overlay(True)
+        if not overlay:
+            pytest.skip("Overlay not available for this test.")
+
+        overlay.send_message(1, "Test message", "#fFffff", 'normal')
+        assert getattr(overlay, 'messages', {}).get(1) == [1, 'Test message', '#fFffff', 'normal', {}]
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

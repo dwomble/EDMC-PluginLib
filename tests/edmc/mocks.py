@@ -1,6 +1,7 @@
 import json
 import importlib
 import sys
+import tkinter as tk
 import types as _types
 import semantic_version
 import logging
@@ -59,9 +60,26 @@ class MockConfig:
         if value is None: return default
         return str(value)
 
+    def get_bool(self, key: str, default=False) -> bool:
+        val = self.get(key.lower())
+
+        if isinstance(val, bool): return val
+        if isinstance(val, int): return val != 0
+
+        if isinstance(val, str) and val.strip().lower() in ("1", "true", "yes", "on"): return True
+        if isinstance(val, str) and val.strip().lower() in ("0", "false", "no", "off"): return False
+
+        return default
+
+    def get_list(self, key: str, default=None):
+        val = self.get(key.lower())
+        return (
+            val if isinstance(val, list) else (default if default is not None else [])
+        )
+
     def delete(self, key: str, *, suppress=False) -> None:
-        if key in self.data:
-            del self.data[key]
+        if key.lower() in self.data:
+            del self.data[key.lower()]
 
 def appversion() -> semantic_version.Version:
     return semantic_version.Version('10.0.0')
@@ -77,7 +95,8 @@ _cfg_attrs = {
     'config_logger': logging.getLogger('TestHarness'),
     'shutting_down': False,
     'logger': logging.getLogger('TestHarness'),
-    'trace_on': []
+    'trace_on': [],
+    'user_agent': 'EDMC-TestHarness/1.0',
     }
 
 _cfg = _types.ModuleType('config')
@@ -94,12 +113,41 @@ for name, val in _cfg_attrs.items():
 sys.modules['config'] = _cfg
 
 # Minimal EDMC `theme` module emulator for direct runs (examples.py / __main__)
-theme_mod = _types.ModuleType("theme")
-theme_mod.theme = _types.SimpleNamespace() # type:ignore
-theme_mod.theme.name = "default"
-theme_mod.theme.dark = False
-sys.modules['theme'] = theme_mod
+class MockTheme:
+    def __init__(self):
+        if hasattr(self, '_initialized'): return
+        self._initialized = True
+    def register(self, widget) -> None:  # noqa: CCR001, C901
+        # Mirrors real theme.py's own type check -- e.g. tk.Toplevel is NOT a tk.Widget
+        # subclass (it's BaseWidget+Wm, not BaseWidget+Widget), so calling this on a
+        # Toplevel always raises in the real app; the mock needs to catch that too.
+        if not isinstance(widget, (tk.Widget, tk.BitmapImage)):
+            raise TypeError(f'Expected widget, got {type(widget)}')
+    def register_alternate(self, pair, gridopts) -> None:
+        pass
+    def button_bind(self, widget, command, image) -> None:
+        pass
+    def update(self, widget) -> None:
+        if not isinstance(widget, (tk.Widget, tk.BitmapImage)):
+            raise TypeError(f'Expected widget, got {type(widget)}')
+    def apply(self, root) -> None:
+        pass
 
+_theme_attrs = {
+    'name': "default",
+    'dark': False
+}
+
+_theme = _types.ModuleType('theme')
+_theme.theme = MockTheme()  # type:ignore
+for name, val in MockTheme.__dict__.items():
+    if not name.startswith('__'):
+        setattr(_theme, name, val)
+
+for name, val in _theme_attrs.items():
+    setattr(_theme, name, val)
+
+sys.modules['theme'] = _theme
 
 class MockCAPIData:
     def __init__(self, data = None, source_host = None, source_endpoint = None, request_cmdr = None) -> None:
@@ -144,10 +192,12 @@ sys.modules['plug'] = _plug
 
 _l10n = _types.ModuleType('l10n')
 _l10n.FALLBACK = 'en' # type: ignore
-_l10n.LOCALISATION_DIR = 'L10n' # type: ignore
+_l10n.LANGUAGE_ID = 'language' # type: ignore
+_l10n.LOCALISATION_DIR = '../L10n' # type: ignore
 _translations = _types.ModuleType('Translations')
 class MockTranslations:
     FALLBACK = 'en'
+    FALLBACK_NAME = 'English'
 
     def __init__(self) -> None:
         pass
@@ -156,6 +206,16 @@ class MockTranslations:
     def tl(self, x: str = "", context: str | None = None, lang: str | None = None) -> str:
         return x
     @staticmethod
+    def contents(lang: str, l10n_path=None) -> dict[str, str]:
+        language_names = {
+            'en': 'English',
+            'de': 'German',
+            'fr': 'French',
+            'es': 'Spanish'
+        }
+        return {'language': language_names.get(lang, lang)}
+    @staticmethod
+
     def available() -> set[str]:
         return set('en')
     @staticmethod
@@ -165,7 +225,7 @@ class MockTranslations:
 for name, val in MockTranslations.__dict__.items():
     if not name.startswith('__'):
         setattr(_translations, name, val)
-translation_attributes = {'FALLBACK': 'en'}
+translation_attributes = {'FALLBACK': 'en', 'FALLBACK_NAME': 'English'}
 for name, val in translation_attributes.items():
     setattr(_translations, name, val)
 
@@ -186,6 +246,29 @@ _l10n.Locale = _locale # type: ignore
 _l10n._Locale = _l10n # type: ignore
 
 sys.modules['l10n'] = _l10n
+
+class MockEDMCHotkeys:
+    class Action:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    def __init__(self):
+        self.register_action_calls = []
+
+    def register_action(self, action):
+        self.register_action_calls.append(action)
+        return True
+
+_mock_edmchotkeys = MockEDMCHotkeys()
+_edmchotkeys = _types.ModuleType('EDMCHotkeys')
+for name, val in MockEDMCHotkeys.__dict__.items():
+    if not name.startswith('__'):
+        setattr(_edmchotkeys, name, val)
+setattr(_edmchotkeys, 'register_action_calls', _mock_edmchotkeys.register_action_calls)
+setattr(_edmchotkeys, 'register_action', _mock_edmchotkeys.register_action)
+
+sys.modules['EDMCHotkeys'] = _edmchotkeys
+
 class MockEDMCOverlay:
     def __init__(self): pass
 
@@ -209,17 +292,23 @@ class Mockedmcoverlay:
                 return
             self.shapes[args[0]] = [*args, kw]
 
+        def send_raw(self, msg, **kw):
+            if not isinstance(msg, dict) or 'id' not in msg:
+                print("send_raw called without a dict containing 'id'")
+                return
+            self.shapes[msg['id']] = [msg, kw]
+
 _edmcoverlay = _types.ModuleType('EDMCOverlay')
 for name, val in MockEDMCOverlay.__dict__.items():
     if not name.startswith('__'):
         setattr(_edmcoverlay, name, val)
-sys.modules['EDMCOverlay'] = _edmcoverlay
+#sys.modules['EDMCOverlay'] = _edmcoverlay
 
 _overlay = _types.ModuleType('edmcoverlay')
 for name, val in Mockedmcoverlay.__dict__.items():
     if not name.startswith('__'):
         setattr(_overlay, name, val)
-sys.modules['EDMCOverlay.edmcoverlay'] = _overlay
+#sys.modules['EDMCOverlay.edmcoverlay'] = _overlay
 
 # Mock up the modern overlay and its plugin
 class MockOverlay_Plugin:
@@ -232,13 +321,13 @@ _overlay_plugin = _types.ModuleType('overlay_plugin')
 for name, val in MockOverlay_Plugin.__dict__.items():
     if not name.startswith('__'):
         setattr(_overlay_plugin, name, val)
-sys.modules['overlay_plugin'] = _overlay_plugin
+#sys.modules['overlay_plugin'] = _overlay_plugin
 
 _overlay_api = _types.ModuleType('overlay_api')
 for name, val in Mockoverlay_api.__dict__.items():
     if not name.startswith('__'):
         setattr(_overlay_api, name, val)
-sys.modules['overlay_plugin.overlay_api'] = _overlay_api
+#sys.modules['overlay_plugin.overlay_api'] = _overlay_api
 
 # Mock watchdog for file system monitoring
 class MockFileSystemEvent:

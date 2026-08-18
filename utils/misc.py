@@ -2,14 +2,38 @@ import subprocess
 import os
 import sys
 import shutil
-import tkinter as tk
+import re
+import locale
+from datetime import datetime
+from math import floor
 from typing import Any
 from functools import reduce
 import operator
+import threading
 
-"""
-  Miscellaneous utility functions
-"""
+import tkinter as tk
+
+from .debug import Debug, catch_exceptions
+
+
+""" Class decorators """
+def singleton(cls):
+    """ A thread-safe implementation of Singleton. Note this will break unittest.mock.patch """
+    instances = {}
+    lock = threading.Lock()
+
+    def get_instance(*args, **kwargs):
+        if cls in instances:
+            return instances[cls]
+        with lock:
+            if cls not in instances:
+                instances[cls] = cls(*args, **kwargs)
+        return instances[cls]
+
+    return get_instance
+
+
+""" Miscellaneous utility functions """
 def get_by_path(dic:dict[str, Any], keys:list[str], default:Any = None) -> Any:
     """ Return an element from a nested object by item sequence. """
     try:
@@ -17,8 +41,9 @@ def get_by_path(dic:dict[str, Any], keys:list[str], default:Any = None) -> Any:
     except (KeyError, IndexError, TypeError):
         return default
 
+@catch_exceptions
 def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
-    """ Copy text to the clipboard o windows or Linx, X11 or Wayland """
+    """ Copy text to the clipboard """
     if parent == None: return
 
     # Non-linux is easy.
@@ -42,26 +67,128 @@ def copy_to_clipboard(parent:tk.Widget|None, text:str = '') -> None:
                 break
 
     if clipboard_cli != None:
+        Debug.logger.debug(f"Using linux clipboard: {clipboard_cli}")
         try:
             subprocess.run(clipboard_cli.split(), input=text.encode('utf-8'), check=True)
         except subprocess.CalledProcessError as e:
-            pass
+            Debug.logger.error(f"Failed to run {clipboard_cli}: {e}")
         return
 
     # Still nothing? Then run all the ones we can find regardless of session type.
     for cmd in cmds:
         if shutil.which(cmd.split()[0]):
-            clipboard_cli = cmd
+            cli:str = cmd
             try:
-                if clipboard_cli != None:
-                    subprocess.run(clipboard_cli.split(), input=text.encode('utf-8'), check=True)
+                subprocess.run(cli.split(), input=text.encode('utf-8'), check=True)
             except subprocess.CalledProcessError as e:
-                pass
+                Debug.logger.error(f"Failed to run {cli}: {e}")
 
     if clipboard_cli != None:
         return
 
     # Final fallback to the tkinter version
+    Debug.logger.warning(f"No clipboard commands found, falling back to native tkinter clipboard")
     parent.clipboard_clear()
     parent.clipboard_append(text)
     parent.update()
+
+
+def _strip_trailing_zeros(formatted:str) -> str:
+    """ Trims a locale float's trailing zeros/decimal point. """
+    decimal_point:str = locale.localeconv()['decimal_point']
+    return formatted.rstrip('0').rstrip(decimal_point)
+
+def hfplus(val:int|float|str|bool|tuple, type:str|None = None) -> str:
+    """
+        A general customized formatting function.
+        Args:
+            val (int|float|str|bool|tuple): A tuple or a value
+            tuple can contain up to 4 elements: (value, type, default, units)
+            'int' and 'float' force types, 'num' will decide based on the value
+            'fixed' will return the value modified
+        Returns:
+            str: The human-readable friendly/readable result
+    """
+    units:str = ''
+    default:str = ''
+    value:int|float|str|bool = default
+
+    if isinstance(val, tuple): # Handle a tuple of 1-4 elements: (value, type, default, units)
+        if len(val) > 1: type = val[1]
+        if len(val) > 2: default = val[2]
+        if len(val) > 3: units = val[3]
+        if len(val) > 0: value = val[0]
+    else:
+        value:int|float|str|bool = val
+        if (isinstance(value, str) and re.match(value, r"^\d+-\d+-\d+ \d+\:\d+")): type = 'datetime'
+        if isinstance(value, bool): type = 'bool'
+        if isinstance(value, int) or isinstance(value, float): type = 'num'
+
+    # Fixed is left entirely alone
+    if type == 'fixed': return str(value) + units
+
+    # Empty, zero or false we return the default so the display isn't full of "No" and "0" etc.
+    if value in [None, False, 'False', 'false', 'NO', 'No', 'no', 0, '0', '', ' ', 'Null', 'null']: return default
+
+    ret:str = ""
+    match type:
+        case 'bool': # We're going to display Yes (blanks and False are handled above)
+            ret = "Yes"
+
+        case 'datetime': # %x is locale-aware; %H:%M keeps no-seconds behavior
+            dt:datetime = datetime.strptime(str(value), "%Y-%m-%d %H:%M:%S")
+            ret = f"{dt:%x} {dt:%H:%M}"
+
+        case 'interval': # Approximated interval (no seconds, only show minutes if it's less than a day)
+            days , rem = divmod(int(value), 60*60*24)
+            hours, rem = divmod(rem, 60*60)
+            mins, rem = divmod(rem, 60)
+            tmp:list = []
+            if floor(days) > 1: tmp.append(f"{floor(days)} days")
+            elif int(days) > 0: tmp.append(f"1 day")
+            if floor(hours) > 1: tmp.append(f"{floor(hours)} hours")
+            elif int(hours) > 0: tmp.append(f" 1 hour")
+            if len(tmp) < 2:
+                if floor(mins) > 1: tmp.append(f" {int(mins)} minutes")
+                elif mins > 0: tmp.append(f" 1 minute")
+            ret = ' '.join(tmp)
+
+        case 'num' | 'float' | 'int': # Above 10k we shorten; below, locale-grouped digits
+            if float(value) > 10000:
+                abbrs:list[str] = ['', 'K', 'M', 'B', 'T']  # Abbreviations for thousands, millions, billions, trillions
+                fnum:float = float('{:.3g}'.format(value))
+                magnitude = 0
+                while abs(fnum) >= 1000:
+                    if magnitude >= len(abbrs) - 1: break
+                    magnitude += 1
+                    fnum /= 1000.0
+                digits:str = _strip_trailing_zeros(locale.format_string('%f', fnum, grouping=False))
+                ret = f"{digits}{abbrs[magnitude]}"
+            elif float(value) > 100 or type == 'int': # No decimals above 100
+                ret = locale.format_string('%.0f', value, grouping=True)
+            elif float(value) > 10: # Only 1 above 10
+                ret = locale.format_string('%.1f', value, grouping=True)
+            elif type == 'float': # Two if it's <10 and a float.
+                ret = locale.format_string('%.2f', value, grouping=True)
+            else: # Not forced to 2dp, but capped there -- ED never needs more
+                ret = _strip_trailing_zeros(locale.format_string('%.2f', value, grouping=True))
+
+        case _: # Title case two words, leave longer strings as is
+            ret = str(value).title() if str(value).count(' ') < 2 and re.search(r"[A-Z0-9]", str(value)) == None else str(value)
+
+    return ret + units
+
+def str_truncate(s:str, length:int = 20, elipsis:str = '…', loc:str = 'right') -> str:
+    """ Truncate a string to a specified length, adding an ellipsis if the string is longer than the specified length. """
+    if len(s) <= length:
+        return s
+
+    match loc:
+        case 'left':
+            return elipsis + s[-(length - len(elipsis)):]
+        case 'middle':
+            half_length = (length - len(elipsis)) // 2
+            return s[:half_length] + elipsis + s[-half_length:]
+        case _:
+            # Default to truncating at the right side
+            return s[:length - len(elipsis)] + elipsis
