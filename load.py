@@ -7,18 +7,16 @@ the unit test harness making it a test harness test harness.
 It could also serve as a template for a new plugin.
 It stores the latest journal, dashboard, and carrier data in global variables for inspection.
 """
-import semantic_version
 import tkinter as tk
 from dataclasses import dataclass, field
 from typing import Dict
 from companion import CAPIData # type: ignore
 
 from utils.debug import Debug
-from utils.updater import Updater
+from utils.updater import Updater, read_version_file
 
 PLUGIN_NAME = "DummyPlugin"
-PLUGIN_VERSION = semantic_version.Version.coerce("0.0.1-dev")
-VERSION = str(PLUGIN_VERSION) # For compatability with the EDMC Plugin Registry
+VERSION = "0.0.0" # placeholder -- plugin_start3() overwrites this
 
 GH_OWNER = "dwomble" # Github owner name
 GH_PROJECT = 'EDMC-DummyPlugin' #  Github project name
@@ -65,10 +63,14 @@ def get_overlay(modern:bool):
 
 def plugin_start3(plugin_dir):
     """ Load this plugin into EDMC """
+    global VERSION
+    version = read_version_file(plugin_dir, "0.0.0")
+    VERSION = str(version)
+
     plugin.plugin_dir = plugin_dir
     plugin.updater = Updater(str(plugin.plugin_dir), GH_OWNER, GH_PROJECT)
     # Let's not since this is a dummy plugin
-    #plugin.updater.check_for_update(PLUGIN_VERSION)
+    #plugin.updater.check_for_update(version)
 
     return PLUGIN_NAME
 

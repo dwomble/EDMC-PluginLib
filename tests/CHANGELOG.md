@@ -29,6 +29,8 @@
 * Added enable/disable overlay test support
 * Improved l10n mock support
 * Added mock support for tk clipboard
+* `hfplus()` now formats numbers and dates using the process locale (via
+  `locale.format_string()`/`:n`) instead of hardcoded comma/period separators
 
 ### Bug Fixes
 
