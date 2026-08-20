@@ -379,7 +379,7 @@ class TestHarness:
 
         # Add a timestamp if not provided.
         if 'timestamp' not in event:
-            event['timestamp'] = datetime.now(timezone.utc).isoformat()
+            event['timestamp'] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # Do the opposite of what EDMC does with a startup event. i.e. update monitor fron the faux event rather than create a faux event from the monitor state.
         if event['event'] == 'Startup':

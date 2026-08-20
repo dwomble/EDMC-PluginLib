@@ -9,7 +9,7 @@ import locale
 import pytest
 from typing import Generator
 
-from utils.misc import hfplus
+from demoplugin.utils.misc import hfplus
 
 @pytest.fixture
 def de_locale() -> Generator[None, None, None]:

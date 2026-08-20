@@ -17,7 +17,7 @@ from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
 
-from utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton
+from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:

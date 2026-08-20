@@ -9,7 +9,7 @@ import pytest
 from typing import Generator
 
 import tests.edmc.requests as mock_requests
-from utils.updater import Updater, read_version_file
+from demoplugin.utils.updater import Updater, read_version_file
 
 @pytest.fixture(autouse=True)
 def clear_mock_calls() -> Generator[None, None, None]:

@@ -166,6 +166,12 @@ class Label(tk.Label):
         tk.Label.__init__(self, master, **kw)
         theme.update(self)
 
+class Text(tk.Text):
+    """ A themed label that can switch between light and dark mode. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        tk.Text.__init__(self, master, **kw)
+        theme.update(self)
+
 class Entry(Base):
     """ A themed entry that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:

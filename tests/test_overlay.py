@@ -9,7 +9,7 @@ from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
 
-from utils.overlay import Overlay
+from demoplugin.utils.overlay import Overlay
 
 @pytest.fixture
 def harness(request) -> Generator[TestHarness, None, None]:
