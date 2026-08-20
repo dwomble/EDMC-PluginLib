@@ -8,7 +8,7 @@ import edmc_data as ed # type: ignore
 
 import demoplugin.utils.th as th
 
-MAX_HEIGHT:int = 75 # Pixels
+MAX_HEIGHT:int = 100 # Pixels
 BADGE_COLOR:str = "orange" # reads well in both light and dark theme
 PANEL_SHOWN_GLYPH:str = "\U0001F648" # see-no-evil monkey -- "pause" analog while visible
 PANEL_HIDDEN_GLYPH:str = "\U0001F441" # eye -- "play" analog while hidden
@@ -53,27 +53,28 @@ class UI:
         self.header:th.Frame = th.Frame(self.frame)
         self.header.grid(row=0, column=0, sticky=tk.NSEW)
         self.header.columnconfigure(0, weight=1)
-        self.header.columnconfigure(1, weight=0)
+        self.header.columnconfigure(1, weight=1)
+        self.header.columnconfigure(2, weight=1)
 
+        row:int = 0
         title:th.Label = th.Label(self.header, text="PluginLib Demo")
-        title.grid(row=0, column=0, sticky=tk.W)
+        title.grid(row=0, column=0, columnspan=2, sticky=tk.W)
         self.toggle_button:th.Button = th.Button(self.header, text=self._toggle_glyph(), width=3, command=self._toggle_panel)
-        self.toggle_button.grid(row=0, column=1, sticky=tk.E)
+        self.toggle_button.grid(row=row, column=2, sticky=tk.E)
 
-        # Dashboard status row: mode, pips, badges when non-empty
-        self.status:th.Frame = th.Frame(self.frame)
-        self.status.grid(row=1, column=0, sticky=tk.W)
-
-        self.mode_label:th.Label = th.Label(self.status, text="")
-        self.mode_label.grid(row=0, column=0, sticky=tk.W)
-        self.pips_label:th.Label = th.Label(self.status, text="")
-        self.pips_label.grid(row=0, column=1, sticky=tk.W, padx=(8, 0))
-        self.badges_label:th.Label = th.Label(self.status, text="", foreground=BADGE_COLOR)
-        # Not gridded here -- update_dashboard() grids it as needed.
+        # Dashboard status row: mode, pips, badges
+        row += 1
+        self.mode_label:th.Label = th.Label(self.header, text="", width=20)
+        self.mode_label.grid(row=row, column=0, sticky=tk.W)
+        self.pips_label:th.Label = th.Label(self.header, text="", width=20)
+        self.pips_label.grid(row=row, column=1, sticky=tk.W, padx=(8, 8))
+        self.badges_label:th.Label = th.Label(self.header, text="", foreground=BADGE_COLOR, width=20)
+        self.badges_label.grid(row=row, column=2, sticky=tk.W)
 
         # Scrollable display frame
+        row += 1
         self.panel:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=MAX_HEIGHT)
-        self.panel.grid(row=2, column=0,  sticky=tk.EW)
+        self.panel.grid(row=row, column=0,  columnspan=2, sticky=tk.EW)
         self.panel.interior.columnconfigure(0, weight=1)
 
         # Content of the scrollable frame
@@ -106,13 +107,7 @@ class UI:
         """ Refresh the mode/pips/badges row from a Status.json entry. """
         self.mode_label.configure(text=self._mode_text(entry))
         self.pips_label.configure(text=self._pips_text(entry))
-
-        badges:str = self._badges_text(entry)
-        self.badges_label.configure(text=badges)
-        if badges:
-            self.badges_label.grid(row=0, column=2, sticky=tk.W, padx=(8, 0))
-        else:
-            self.badges_label.grid_remove()
+        self.badges_label.configure(text=self._badges_text(entry))
 
     def _mode_text(self, entry:dict) -> str:
         """ One word for where/what you're in -- first match wins. """

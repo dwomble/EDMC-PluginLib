@@ -118,7 +118,7 @@ class TestDashboardUI:
         assert plugin.ui is not None
         assert plugin.ui.mode_label.cget("text") == "Docked"
         assert plugin.ui.pips_label.cget("text") == "4/0/4"
-        assert not plugin.ui.badges_label.grid_info()
+        assert plugin.ui.badges_label.cget("text") == ""
 
     def test_shows_and_updates_badges_when_something_is_wrong(self, harness:TestHarness) -> None:
         harness.fire_dashboard_event({"Flags": FlagsLowFuel})
@@ -130,7 +130,6 @@ class TestDashboardUI:
 
         harness.fire_dashboard_event({"Flags": FlagsDocked})
         assert plugin.ui.badges_label.cget("text") == ""
-        assert not plugin.ui.badges_label.grid_info()
 
 class TestJournalUI:
     def test_handles_journal_entry(self, harness:TestHarness) -> None:
