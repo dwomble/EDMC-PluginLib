@@ -11,20 +11,18 @@ The library has four components.
 
 ## Demo Plugin
 
-Created as a platform to test and exercise the library functionality it also acts as a simple plugin template.
+Created as a platform to test and exercise the library functionality it also acts as a simple plugin template and displays a journal event list and a lightweight status mode/pips/alert-badge summary.
 
 ## Testing
 
 A unit and regression testing tool for EDMC that mocks EDMC functionality enabling `pytest`, python debugger, and `pycov` test coverage analyses.
 
 * Development is much faster when you can use the python debugger; replay sequences of events; and run regression tests.
-
 * AI tools such as Claude Code are far more effective when they can write and run regression tests.
-
 * Debugging user issues is much easier when you can replay their journal in your environment to reproduce problems.
 
-<img width="158" height="371" alt="Code test coverage" src="https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f" />
-<img width="595" height="290" alt="Debugging a plugin" src="https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f" />
+[Code test coverage](https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f)
+[Debugging a plugin](https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f)
 
 ### Features
 
