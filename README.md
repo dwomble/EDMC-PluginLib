@@ -2,11 +2,16 @@
 
 Bringing EDMC plugin development out of the dark ages. 😜
 
-The library has three components.
+The library has four components.
 
+1. Demo plugin
 1. A unit testing tool
 1. A library of useful utility classes and functions
 1. Some handy github workflows
+
+## Demo Plugin
+
+Created as a platform to test and exercise the library functionality it also acts as a simple plugin template.
 
 ## Testing
 

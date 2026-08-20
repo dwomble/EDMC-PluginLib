@@ -1,11 +1,11 @@
 """
 A dummy plugin for testing and illustrative purposes.
 
-It doesn't do anything useful, but it does implement the plugin interface. It's used to enable unit testing of
+It doesn't do anything very useful, but it does implement the plugin interface. It's used to enable unit testing of
 the unit test harness making it a test harness test harness.
 
 It could also serve as a template for a new plugin.
-It stores the latest journal, dashboard, and carrier data in global variables for inspection.
+It displays journal events as they occur and stores the latest journal, dashboard, and carrier data in global variables for inspection.
 """
 import tkinter as tk
 from dataclasses import dataclass, field

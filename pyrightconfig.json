@@ -1,0 +1,15 @@
+{
+    "venvPath": ".",
+    "venv": ".venv",
+    "exclude": [
+        "demoplugin/utils/dateutil",
+        "demoplugin/utils/tkrichtext",
+        "demoplugin/utils/treeviewplus.py",
+        "tests/edmc/plugins",
+        "tests/edmc/EDMCLogging.py",
+        "tests/edmc/monitor.py",
+        "tests/edmc/companion.py",
+        "tests/edmc/ttkHyperlinkLabel.py",
+        "tests/edmc/util_ships.py"
+    ]
+}
