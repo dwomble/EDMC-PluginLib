@@ -16,11 +16,11 @@ from demoplugin.utils.debug import Debug, catch_exceptions
 from demoplugin.utils.updater import Updater, read_version_file
 from demoplugin.ui import UI
 
-PLUGIN_NAME = "DummyPlugin"
+PLUGIN_NAME = "DemoPlugin"
 VERSION = "0.0.0" # placeholder -- plugin_start3() overwrites this
 
 GH_OWNER = "dwomble" # Github owner name
-GH_PROJECT = 'EDMC-DummyPlugin' #  Github project name
+GH_PROJECT = 'EDMC-DemoPlugin' #  Github project name
 
 @dataclass
 class plugin:

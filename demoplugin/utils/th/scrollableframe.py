@@ -14,8 +14,6 @@ class ScrollableFrame(tk.Frame):
     A themed frame whose content -- packed or gridded into `.interior` -- scrolls vertically once it exceeds `maxheight` pixels.
     """
     def __init__(self, master:tk.Widget, maxheight:int|None = None, **kw) -> None:
-        # maxheight (one word, no underscore) matches Tk's own option-naming convention
-        # (borderwidth, textvariable, highlightthickness, ...), not Python's usual snake_case.
         tk.Frame.__init__(self, master, **kw)
         theme.update(self)
 
