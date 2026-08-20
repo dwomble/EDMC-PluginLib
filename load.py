@@ -122,6 +122,9 @@ def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
     dashboard.is_beta = is_beta
     dashboard.entry = entry
 
+    if plugin.ui:
+        plugin.ui.update_dashboard(entry)
+
 def capi_fleetcarrier(data:CAPIData):
     """ Handle Fleet carrier data """
 

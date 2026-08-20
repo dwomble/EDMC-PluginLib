@@ -4,7 +4,8 @@
 
 ### New Features
 
-* Made the demo plugin do something slightly useful
+* Made the demo plugin do something slightly useful, including a lightweight
+  mode/pips/alert-badge summary derived from dashboard_entry's Status.json
 
 * Added an EDMC theme-aware ttk/tk object library (th) including:
   * TopLevel
