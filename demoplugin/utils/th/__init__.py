@@ -8,6 +8,7 @@ import tkinter.font as tkfont
 from theme import theme # type: ignore
 from config import config # type: ignore
 
+from demoplugin.utils.debug import Debug, catch_exceptions
 from .autocompleter import Autocompleter
 from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
@@ -166,8 +167,32 @@ class Label(tk.Label):
         tk.Label.__init__(self, master, **kw)
         theme.update(self)
 
+# class Text(Base):
+#     """ A themed label that can switch between light and dark mode. """
+#     def __init__(self, master:tk.Widget, **kw) -> None:
+#         alt:tk.Text = tk.Text(master, **kw)
+
+#         # Debug.logger.error(f"Theme: {theme.current}")
+#         # modmap:dict = {'bg': 'background', 'fg': 'foreground', 'font': 'font', 'highlightbackground': 'activebackground',
+#         #                 'highlightcolor': 'activeforeground'}
+#         # for k, v in modmap.items():
+#         #     if k not in kw:
+#         #         kw[k] = theme.current.get(v, 'red')
+#         if 'bg' not in kw:
+#             kw['bg'] = tk.Label()['background']
+#         if 'font' not in kw:
+#             kw['font'] = tk.Label()['font']
+#         if 'relief' not in kw:
+#              kw['relief'] = tk.FLAT
+#         if 'highlightthickness' not in kw:
+#              kw['highlightthickness'] = 1
+#         txt:tk.Text = tk.Text(master, **kw)
+
+#         super().__init__(txt, alt)
+#         #theme.update(self)
+
 class Text(tk.Text):
-    """ A themed label that can switch between light and dark mode. """
+    """ A themed text box that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
         tk.Text.__init__(self, master, **kw)
         theme.update(self)

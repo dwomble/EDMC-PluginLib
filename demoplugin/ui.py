@@ -21,31 +21,32 @@ class UI:
     """
 
     def __init__(self, parent:tk.Frame):
-        self.frame = th.Frame(parent)
+        self._panel_enabled:bool = True
 
-        self._panel_enabled = True
+        self.frame:th.Frame = th.Frame(parent)
+        self.frame.grid(row=0, column=0, sticky=tk.NSEW)
+        self.frame.columnconfigure(0, weight=1)
 
+        # Header row
         self.header:th.Frame = th.Frame(self.frame)
-        self.header.grid(row=0, column=0, sticky=tk.EW)
+        self.header.grid(row=0, column=0, sticky=tk.NSEW)
         self.header.columnconfigure(0, weight=1)
-        self.header.columnconfigure(1, weight=1)
+        self.header.columnconfigure(1, weight=0)
 
         title:th.Label = th.Label(self.header, text="PluginLib Demo")
         title.grid(row=0, column=0, sticky=tk.W)
-
         self.toggle_button:th.Button = th.Button(self.header, text=self._toggle_glyph(), width=3, command=self._toggle_panel)
-        self.toggle_button.grid(row=0, column=2, sticky=tk.E)
+        self.toggle_button.grid(row=0, column=1, sticky=tk.E)
 
+        # Scrollable display frame
         self.panel:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=MAX_HEIGHT)
-        self.panel.grid(row=1, column=0, columnspan=2, sticky=tk.EW)
+        self.panel.grid(row=1, column=0,  sticky=tk.EW)
         self.panel.interior.columnconfigure(0, weight=1)
-        if not self._panel_enabled:
-             self.panel.grid_forget()
 
-        self.content:tk.Text = tk.Text(self.panel.interior, wrap=tk.WORD)
+        # Content of the scrollable frame
+        self.content:th.Text = th.Text(self.panel.interior, wrap=tk.WORD)
         self.content.grid(row=0, column=0)
 
-        self.frame.grid(row=0, column=0, sticky=tk.NSEW)
 
     def _toggle_panel(self) -> None:
         """ Shows/hides content; collection keeps going. """
