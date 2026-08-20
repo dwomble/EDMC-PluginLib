@@ -2,10 +2,11 @@
 A dummy plugin for testing and illustrative purposes.
 """
 from datetime import datetime, timezone
-
 import tkinter as tk
-import demoplugin.utils.th as th
+
 import edmc_data as ed # type: ignore
+
+import demoplugin.utils.th as th
 
 MAX_HEIGHT:int = 75 # Pixels
 BADGE_COLOR:str = "orange" # reads well in both light and dark theme
@@ -98,7 +99,7 @@ class UI:
         ts:datetime = datetime.strptime(event['timestamp'], JOURNAL_FORMAT)
         tsl:datetime = ts.replace(tzinfo=timezone.utc).astimezone()
 
-        self.content.insert("1.0", f"{event['timestamp']}: {event['event']}\n")
+        self.content.insert("1.0", f"{tsl.strftime(DISP_FORMAT)}: {event['event']}\n")
         #self.content.insert(tk.END, f"{tsl.strftime(DISP_FORMAT)}: {event['event']}\n")
 
     def update_dashboard(self, entry:dict) -> None:

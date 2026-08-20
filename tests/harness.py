@@ -349,7 +349,7 @@ class TestHarness:
                                 try:
                                     event[k1] = eval("f'" + v1 + "'")
                                 except Exception as e:
-                                    logging.warning(f"Warning: Could not evaluate f-string {v1}: {e}")
+                                    logging.warning(f"Warning: Could not evaluate f-string {v1}: {e} {line}")
                             if isinstance(event[k1], str) and event[k1].isnumeric():
                                 event[k1] = int(event[k1])
                         lines.append(event)
