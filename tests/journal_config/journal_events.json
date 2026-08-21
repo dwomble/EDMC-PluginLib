@@ -1,4 +1,11 @@
 {
+    "sequence": [
+        { "event":"Music", "MusicTrack":"GalaxyMap" },
+        { "event":"FSDTarget", "Name":"HIP 84800", "SystemAddress":18265019327969, "StarClass":"M", "RemainingJumpsInRoute":27 },
+        { "event":"Undocked", "StationName":"T9M-33M", "StationType":"FleetCarrier", "MarketID":3709409280, "Taxi":false, "Multicrew":false },
+        { "event":"ReceiveText", "From":"[CLB] SV Booze Cruise T9M-33M", "Message":"$STATION_NoFireZone_exited;", "Message_Localised":"No fire zone exited.", "Channel":"npc" },
+        { "event":"StartJump", "JumpType":"Hyperspace", "Taxi":false, "StarSystem":"HIP 84800", "SystemAddress":18265019327969, "StarClass":"M" }
+    ],
     "null": [
         { "event":"Music", "MusicTrack":"Supercruise" }
     ],

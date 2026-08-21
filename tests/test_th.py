@@ -13,11 +13,12 @@ how many times reset_instance() runs, so a normal per-test reset+recreate here i
 """
 import pytest
 import tkinter as tk
+from tkinter import ttk
 from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
 
-from utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton
+from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, Progressbar
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
@@ -155,6 +156,39 @@ class TestPlainWidgets:
         top = TopLevel(harness.parent)
         assert isinstance(top, tk.Toplevel)
         top.destroy()
+
+    def test_text_defaults_match_label(self, harness:TestHarness) -> None:
+        # Regression: real theme.register() sees Text's own native
+        # colors as pre-customized against tk.Label's defaults --
+        # it must start out matching Label's to stay theme-managed.
+        txt = Text(harness.parent)
+        lbl = tk.Label(harness.parent)
+        assert txt["foreground"] == lbl["foreground"]
+        assert txt["background"] == lbl["background"]
+        assert txt["font"] == lbl["font"]
+        assert txt["insertbackground"] == lbl["foreground"]
+
+    def test_text_respects_explicit_colors(self, harness:TestHarness) -> None:
+        txt = Text(harness.parent, foreground="red", background="blue")
+        assert txt["foreground"] == "red"
+        assert txt["background"] == "blue"
+
+    def test_progressbar_light_theme_uses_native_style(self, harness:TestHarness) -> None:
+        harness.config.set('theme', 0)
+        Progressbar.refresh_style()
+        pb = Progressbar(harness.parent)
+        assert isinstance(pb, ttk.Progressbar)
+        style = ttk.Style()
+        assert style.lookup(Progressbar.STYLE, 'troughcolor') == style.lookup('TProgressbar', 'troughcolor')
+
+    def test_progressbar_dark_theme_uses_dark_colors(self, harness:TestHarness) -> None:
+        harness.config.set('theme', 1)
+        try:
+            Progressbar(harness.parent)
+            assert ttk.Style().lookup(Progressbar.STYLE, 'troughcolor') == 'grey4'
+        finally:
+            harness.config.set('theme', 0)
+            Progressbar.refresh_style()
 
 class TestThemedPairWidgets:
     """ Button/Checkbutton are light/dark pairs -- only one half should ever be gridded. """

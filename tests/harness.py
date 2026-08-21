@@ -349,7 +349,7 @@ class TestHarness:
                                 try:
                                     event[k1] = eval("f'" + v1 + "'")
                                 except Exception as e:
-                                    logging.warning(f"Warning: Could not evaluate f-string {v1}: {e}")
+                                    logging.warning(f"Warning: Could not evaluate f-string {v1}: {e} {line}")
                             if isinstance(event[k1], str) and event[k1].isnumeric():
                                 event[k1] = int(event[k1])
                         lines.append(event)
@@ -379,7 +379,7 @@ class TestHarness:
 
         # Add a timestamp if not provided.
         if 'timestamp' not in event:
-            event['timestamp'] = datetime.now(timezone.utc).isoformat()
+            event['timestamp'] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # Do the opposite of what EDMC does with a startup event. i.e. update monitor fron the faux event rather than create a faux event from the monitor state.
         if event['event'] == 'Startup':
