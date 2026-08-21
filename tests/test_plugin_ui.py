@@ -18,7 +18,7 @@ from demoplugin.ui import _MODES, _BADGES
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
-    global plugin, dashboard, journal, carrier, capi_fleetcarrier
+    global plugin, dashboard, journal, carrier
 
     TestHarness.reset_instance()
     reset_plugin_modules()
