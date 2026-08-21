@@ -21,8 +21,8 @@ A unit and regression testing tool for EDMC that mocks EDMC functionality enabli
 * AI tools such as Claude Code are far more effective when they can write and run regression tests.
 * Debugging user issues is much easier when you can replay their journal in your environment to reproduce problems.
 
-[Code test coverage](https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f)
-[Debugging a plugin](https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f)
+![Debugging a plugin](https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f)
+![Code test coverage](https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f)
 
 ### Features
 
