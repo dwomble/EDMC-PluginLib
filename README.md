@@ -49,6 +49,7 @@ A Library of utilities for EDMC plugins. Some utilities are drop-in ready to go,
 * Scrollable notebook
 * Debug
 * Plugin updater
+* Notifications capability
 * Overlay handler
 * Miscellaneous functions (Date utilities, Cross-platform clipboard copy, Nested object retrieval, Singleton decorator)
 

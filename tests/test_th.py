@@ -18,7 +18,7 @@ from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
 
-from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, Progressbar
+from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Progressbar
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
@@ -172,6 +172,26 @@ class TestPlainWidgets:
         txt = Text(harness.parent, foreground="red", background="blue")
         assert txt["foreground"] == "red"
         assert txt["background"] == "blue"
+
+    def test_richtext_defaults_match_label(self, harness:TestHarness) -> None:
+        rt = RichText(harness.parent)
+        lbl = tk.Label(harness.parent)
+        assert rt["foreground"] == lbl["foreground"]
+        assert rt["background"] == lbl["background"]
+        # The internal wrapping frame must match too, or it shows as
+        # an unthemed border around the text.
+        assert str(rt.frame["background"]) == str(lbl["background"])
+
+    def test_richtext_renders_markdown(self, harness:TestHarness) -> None:
+        rt = RichText(harness.parent, markdown="**bold** text")
+        assert "bold" in rt.get("1.0", tk.END)
+
+    def test_richscrolledtext_defaults_match_label(self, harness:TestHarness) -> None:
+        rst = RichScrolledText(harness.parent)
+        lbl = tk.Label(harness.parent)
+        assert rst["foreground"] == lbl["foreground"]
+        assert rst["background"] == lbl["background"]
+        assert str(rst.frame["background"]) == str(lbl["background"])
 
     def test_progressbar_light_theme_uses_native_style(self, harness:TestHarness) -> None:
         harness.config.set('theme', 0)
