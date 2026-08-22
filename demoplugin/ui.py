@@ -3,6 +3,7 @@ A dummy plugin for testing and illustrative purposes.
 """
 from datetime import datetime, timezone
 import tkinter as tk
+from tkinter import font
 
 import edmc_data as ed # type: ignore
 
@@ -62,13 +63,17 @@ class UI:
         self.toggle_button:th.Button = th.Button(self.header, text=self._toggle_glyph(), width=3, command=self._toggle_panel)
         self.toggle_button.grid(row=row, column=2, sticky=tk.E)
 
+        raw = title.cget("font")
+        fnt:font.Font = font.Font(font=raw)
+        fnt.configure(weight="bold")
+        title.configure(font=fnt)
         # Dashboard status row: mode, pips, badges
         row += 1
-        self.mode_label:th.Label = th.Label(self.header, text="", width=20)
+        self.mode_label:th.Button = th.Button(self.header, text="", width=20)
         self.mode_label.grid(row=row, column=0, sticky=tk.W)
-        self.pips_label:th.Label = th.Label(self.header, text="", width=20)
+        self.pips_label:th.Button = th.Button(self.header, text="", width=20)
         self.pips_label.grid(row=row, column=1, sticky=tk.W, padx=(8, 8))
-        self.badges_label:th.Label = th.Label(self.header, text="", foreground=BADGE_COLOR, width=20)
+        self.badges_label:th.Button = th.Button(self.header, text="", width=20)
         self.badges_label.grid(row=row, column=2, sticky=tk.W)
 
         # Scrollable display frame
