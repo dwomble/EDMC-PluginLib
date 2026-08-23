@@ -9,14 +9,12 @@ from semantic_version import Version # type: ignore
 
 from config import config, user_agent # type: ignore
 from timeout_session import new_session # type: ignore
-
 from .debug import Debug
 
 # Check for updates at most once per day
 CHECK_INTERVAL:int = (3600 * 24)
-TIMEOUT=10
 _NOTICE_HEADING:re.Pattern = re.compile(r'^##\s+(\d+)\s*$', re.MULTILINE)
-
+TIMEOUT=10
 
 def _headers(gh_project:str) -> dict:
     """ Blends into EDMC's own UA, per PLUGINS.md. """
@@ -46,13 +44,11 @@ class Updater():
     Call check_for_update(version) at plugin startup. It's asynchronous.
     Call install() to install the update when you choose (commonly on shutdown).
     """
-    def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str, gh_release_info:str='') -> None:
+
+    def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str) -> None:
         self.plugin_dir:str = plugin_dir
         self.gh_owner:str = gh_owner
         self.gh_project:str = gh_project
-        self.gh_release_info:str = gh_release_info
-        if self.gh_release_info == '':
-            self.gh_release_info = f'https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest'
 
         self.update_available:bool = False # Is there an update available?
         self.install_update:bool = False # Should it be installed?
@@ -61,6 +57,7 @@ class Updater():
 
         self.download_url:str = ""
         self.zip_downloaded:str = "" # ZIP file that was downloaded
+
 
     def download_zip(self) -> None:
         """ Download the zipfile of the latest version """
@@ -78,15 +75,18 @@ class Updater():
         try:
             session:requests.Session = new_session(timeout=TIMEOUT)
             r = session.get(self.download_url, headers=_headers(self.gh_project), timeout=TIMEOUT)
+            Debug.logger.debug(f"{r}")
             r.raise_for_status()
         except Exception:
-            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'N/A'}).)")
+            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'no response'}).")
             return
 
         with open(zip_file, 'wb') as f:
+            Debug.logger.info(f"Downloading {self.gh_project} to " + zip_file)
             for chunk in r.iter_content(chunk_size=32768):
                 f.write(chunk)
         self.zip_downloaded = zip_file
+
 
     def install(self) -> None:
         """ Download the latest zip file and install it """
@@ -101,12 +101,14 @@ class Updater():
         except Exception as e:
             Debug.logger.error("Failed to install update, exception info:", exc_info=e)
 
+
     def get_release(self) -> bool:
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
-            Debug.logger.debug(f"Requesting {self.gh_release_info}")
+            url:str = f"https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest"
+            Debug.logger.debug(f"Requesting {url}")
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r:requests.Response = session.get(self.gh_release_info, headers=_headers(self.gh_project), timeout=TIMEOUT)
+            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)
@@ -140,6 +142,7 @@ class Updater():
 
         return True
 
+
     def _check_update(self, version:Version) -> None:
         """ Compare the current version file with github version """
         try:
@@ -156,27 +159,27 @@ class Updater():
         except Exception as e:
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)
 
-    def check_for_update(self, version:Version, plugin_name: str, interval:int = 3600 * 24) -> None:
-        """ Start an update check thread """
+
+    def check_for_update(self, version:Version, plugin_name:str, interval:int = CHECK_INTERVAL) -> None:
+        """ Start an update check thread. `interval` (seconds) throttles how often the check
+        actually runs -- defaults to once a day. """
         last:int = config.get_int(f"{plugin_name}_last_update_check", 0)
         if last >= int(time.time()) - interval:
             return
 
-        config.set(f"{self.gh_project}_last_update_check", int(time.time()))
-
-        thread:Thread = Thread(target=self._check_update, args=[version], name=f"{self.gh_project} update checker")
+        config.set(f"{plugin_name}_last_update_check", int(time.time()))
+        thread:Thread = Thread(target=self._check_update, args=[version], name="Neutron Dancer update checker")
         thread.start()
 
 class Notices():
     """
-    Fetches NOTICES.md from the repo's default branch (see example in this repository), tracking
+    Fetches NOTICES.md from the repo's default branch, tracking
     which "## N" notice heading the user has dismissed.
 
     Call check_for_notices() at startup -- async and throttled
     like Updater.check_for_update(). pending_notice holds the
-    current one to show; call dismiss_notice() once seen.
-    """
-    def __init__(self, gh_owner:str, gh_project:str, gh_branch:str = 'master') -> None:
+    current one to show; call dismiss_notice() once seen. """
+    def __init__(self, gh_owner:str, gh_project:str, gh_branch:str = 'main') -> None:
         self.gh_owner:str = gh_owner
         self.gh_project:str = gh_project
         self.gh_branch:str = gh_branch
@@ -201,7 +204,7 @@ class Notices():
         """ Start a notices-check thread, throttled like updates. """
         last:int = config.get_int(f"{self.gh_project}_last_notice_check", 0)
         if last >= int(time.time()) - interval:
-            return
+           return
 
         config.set(f"{self.gh_project}_last_notice_check", int(time.time()))
         thread:Thread = Thread(target=self._check_notices, args=[], name=f"{self.gh_project} notice checker")
@@ -213,6 +216,7 @@ class Notices():
         if self.notice_id == 0:
             return None
         dismissed:int = config.get_int(f"{self.gh_project}_dismissed_notice", 0)
+        dismissed = 0
         return self.notice if self.notice_id > dismissed else None
 
     def dismiss_notice(self) -> None:
