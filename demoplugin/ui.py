@@ -30,6 +30,21 @@ _MODES:list[tuple[str, int, bool]] = [
     ("Scooping Fuel", ed.FlagsScoopingFuel, False),
 ]
 
+_FOCUS:dict[int, str] = {
+    ed.GuiFocusNoFocus: "None",
+    ed.GuiFocusInternalPanel: "Internal",
+    ed.GuiFocusExternalPanel: "External",
+    ed.GuiFocusCommsPanel: "Comms",
+    ed.GuiFocusRolePanel: "Role",
+    ed.GuiFocusStationServices: "Station",
+    ed.GuiFocusGalaxyMap: "Galaxy Map",
+    ed.GuiFocusSystemMap: "System Map",
+    ed.GuiFocusOrrery: "Orrery",
+    ed.GuiFocusFSS: "FSS",
+    ed.GuiFocusSAA: "SAA",
+    ed.GuiFocusCodex: "Codex"
+}
+
 # (label, bit, is_flags2) -- shown, in order, only while true
 _BADGES:list[tuple[str, int, bool]] = [
     ("Gear Down", ed.FlagsLandingGearDown, False),
@@ -65,9 +80,9 @@ class UI:
 
         row:int = 0
         title:th.Label = th.Label(self.header, text="PluginLib Demo")
-        title.grid(row=0, column=0, columnspan=2, sticky=tk.W)
+        title.grid(row=0, column=0, columnspan=3, sticky=tk.W)
         self.toggle_button:th.Button = th.Button(self.header, text=self._toggle_glyph(), width=3, command=self._toggle_panel)
-        self.toggle_button.grid(row=row, column=2, sticky=tk.E)
+        self.toggle_button.grid(row=row, column=3, sticky=tk.E)
 
         raw = title.cget("font")
         fnt:font.Font = font.Font(font=raw)
@@ -75,20 +90,23 @@ class UI:
         title.configure(font=fnt)
         # Dashboard status row: mode, pips, badges
         row += 1
-        self.mode:th.Button = th.Button(self.header, text="", width=20)
+        self.mode:th.Button = th.Button(self.header, text="", width=13)
         th.Tooltip(self.mode, "Mode flags")
-        self.mode.grid(row=row, column=0, sticky=tk.W)
-        self.pips:th.Button = th.Button(self.header, text="", width=20)
+        self.mode.grid(row=row, column=0, padx=(0, 2), sticky=tk.W)
+        self.gui:th.Button = th.Button(self.header, text="", width=13)
+        th.Tooltip(self.gui, "GUI Focus")
+        self.gui.grid(row=row, column=1, padx=2, sticky=tk.W)
+        self.pips:th.Button = th.Button(self.header, text="", width=13)
         th.Tooltip(self.pips, "Pips")
-        self.pips.grid(row=row, column=1, sticky=tk.W, padx=(8, 8))
-        self.badges:th.Button = th.Button(self.header, text="", width=20)
+        self.pips.grid(row=row, column=2, padx=2, sticky=tk.W)
+        self.badges:th.Button = th.Button(self.header, text="", width=13)
         th.Tooltip(self.badges, "Warning flags")
-        self.badges.grid(row=row, column=2, sticky=tk.W)
+        self.badges.grid(row=row, column=3, padx=(2, 0), sticky=tk.W)
 
         # Scrollable display frame
         row += 1
         self.panel:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=MAX_HEIGHT)
-        self.panel.grid(row=row, column=0,  columnspan=2, sticky=tk.EW)
+        self.panel.grid(row=row, column=0,  columnspan=3, sticky=tk.EW)
         self.panel.interior.columnconfigure(0, weight=1)
 
         # Content of the scrollable frame
@@ -102,12 +120,14 @@ class UI:
 
         self.toggle_button.configure(text=self._toggle_glyph())
         if self._panel_enabled:
-            self.mode.grid(row=1, column=0, sticky=tk.W)
-            self.pips.grid(row=1, column=1, sticky=tk.W, padx=(8, 8))
-            self.badges.grid(row=1, column=2, sticky=tk.W)
+            self.mode.grid(row=1, column=0, padx=(0, 2), sticky=tk.W)
+            self.gui.grid(row=1, column=1, padx=2, sticky=tk.W)
+            self.pips.grid(row=1, column=2, padx=2, sticky=tk.W)
+            self.badges.grid(row=1, column=3, padx=(2, 0), sticky=tk.W)
             self.panel.grid(row=2, column=0, sticky=tk.EW)
         else:
             self.mode.grid_forget()
+            self.gui.grid_forget()
             self.pips.grid_forget()
             self.badges.grid_forget()
             self.panel.grid_forget()
@@ -137,6 +157,10 @@ class UI:
             if (flags2 if is_flags2 else flags) & bit:
                 return label
         return "Flying"
+
+    def _gui_text(self, entry:dict) -> str:
+        """ GUI Focus"""
+        return _FOCUS[entry['GuiFocus']]
 
     def _pips_text(self, entry:dict) -> str:
         """ Sys/Eng/Wep in whole pips -- Status.json stores half-pips. """
