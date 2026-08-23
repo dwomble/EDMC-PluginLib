@@ -76,7 +76,7 @@ class UI:
         th.Tooltip(self.pips, "Pips")
         self.pips.grid(row=row, column=1, sticky=tk.W, padx=(8, 8))
         self.badges:th.Button = th.Button(self.header, text="", width=20)
-        th.Tooltip(self.pips, "Warning flags")
+        th.Tooltip(self.badges, "Warning flags")
         self.badges.grid(row=row, column=2, sticky=tk.W)
 
         # Scrollable display frame
