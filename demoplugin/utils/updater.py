@@ -13,17 +13,17 @@ from timeout_session import new_session # type: ignore
 from .debug import Debug
 
 # Check for updates at most once per day
-UPDATE_CHECK_INTERVAL:int = (3600 * 24)
-
+CHECK_INTERVAL:int = (3600 * 24)
 TIMEOUT=10
+_NOTICE_HEADING:re.Pattern = re.compile(r'^##\s+(\d+)\s*$', re.MULTILINE)
+
 
 def _headers(gh_project:str) -> dict:
     """ Blends into EDMC's own UA, per PLUGINS.md. """
     return {'User-Agent': f'{user_agent} {gh_project}-Updater'}
 
 def read_version_file(plugin_dir:str, default:str) -> Version:
-    """ Reads the "version" file install() writes -- also
-    stamped by CI at release, so a fresh install has one. """
+    """ Reads the "version" file  by CI at release and updated by install(). """
     version_file:str = os.path.join(plugin_dir, "version")
     if os.path.isfile(version_file):
         with open(version_file) as f:
@@ -156,10 +156,10 @@ class Updater():
         except Exception as e:
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)
 
-    def check_for_update(self, version:Version) -> None:
+    def check_for_update(self, version:Version, plugin_name: str, interval:int = 3600 * 24) -> None:
         """ Start an update check thread """
-        last:int = config.get_int(f"{self.gh_project}_last_update_check", 0)
-        if last >= int(time.time()) - UPDATE_CHECK_INTERVAL: # Check for updates at most once per interval
+        last:int = config.get_int(f"{plugin_name}_last_update_check", 0)
+        if last >= int(time.time()) - interval:
             return
 
         config.set(f"{self.gh_project}_last_update_check", int(time.time()))
@@ -167,22 +167,8 @@ class Updater():
         thread:Thread = Thread(target=self._check_update, args=[version], name=f"{self.gh_project} update checker")
         thread.start()
 
-_NOTICE_HEADING:re.Pattern = re.compile(r'^##\s+(\d+)\s*$', re.MULTILINE)
-
-def parse_notices(text:str) -> list[tuple[int, str]]:
-    """ (id, body) for every "## N" heading, highest id first. """
-    matches:list = list(_NOTICE_HEADING.finditer(text))
-    notices:list[tuple[int, str]] = []
-    for i, m in enumerate(matches):
-        start:int = m.end()
-        end:int = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        notices.append((int(m.group(1)), text[start:end].strip()))
-    notices.sort(key=lambda n: -n[0])
-    return notices
-
 class Notices():
     """
-
     Fetches NOTICES.md from the repo's default branch (see example in this repository), tracking
     which "## N" notice heading the user has dismissed.
 
@@ -197,23 +183,21 @@ class Notices():
         self.notice_id:int = 0
         self.notice:str = ""
 
-    def _notices_url(self) -> str:
-        return f'https://raw.githubusercontent.com/{self.gh_owner}/{self.gh_project}/{self.gh_branch}/NOTICES.md'
-
     def _check_notices(self) -> None:
         try:
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r:requests.Response = session.get(self._notices_url(), headers=_headers(self.gh_project), timeout=TIMEOUT)
+            url:str = f'https://raw.githubusercontent.com/{self.gh_owner}/{self.gh_project}/{self.gh_branch}/NOTICES.md'
+            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except Exception as e:
             Debug.logger.error("Failed to fetch notices, exception info:", exc_info=e)
             return
 
-        notices:list[tuple[int, str]] = parse_notices(r.text)
+        notices:list[tuple[int, str]] = self._parse_notices(r.text)
         if notices:
             self.notice_id, self.notice = notices[0]
 
-    def check_for_notices(self, interval:int = UPDATE_CHECK_INTERVAL) -> None:
+    def check_for_notices(self, interval:int = CHECK_INTERVAL) -> None:
         """ Start a notices-check thread, throttled like updates. """
         last:int = config.get_int(f"{self.gh_project}_last_notice_check", 0)
         if last >= int(time.time()) - interval:
@@ -234,3 +218,15 @@ class Notices():
     def dismiss_notice(self) -> None:
         """ Never show this notice, or any older one, again. """
         config.set(f"{self.gh_project}_dismissed_notice", self.notice_id)
+
+    @staticmethod
+    def _parse_notices(text:str) -> list[tuple[int, str]]:
+        """ (id, body) for every "## N" heading, highest id first. """
+        matches:list = list(_NOTICE_HEADING.finditer(text))
+        notices:list[tuple[int, str]] = []
+        for i, m in enumerate(matches):
+            start:int = m.end()
+            end:int = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            notices.append((int(m.group(1)), text[start:end].strip()))
+        notices.sort(key=lambda n: -n[0])
+        return notices

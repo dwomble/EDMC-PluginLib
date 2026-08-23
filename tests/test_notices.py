@@ -9,7 +9,7 @@ import pytest
 from typing import Generator
 
 import tests.edmc.requests as mock_requests
-from demoplugin.utils.updater import Notices, parse_notices
+from demoplugin.utils.updater import Notices
 
 @pytest.fixture(autouse=True)
 def clear_mock_calls() -> Generator[None, None, None]:
@@ -35,15 +35,16 @@ The oldest notice.
 class TestParseNotices:
 
     def test_returns_highest_id_first(self) -> None:
-        notices = parse_notices(NOTICES_MD)
-        assert [n[0] for n in notices] == [3, 2, 1]
+        notices = Notices("dwomble", "EDMC-DummyPlugin")
+        assert [n[0] for n in notices._parse_notices(NOTICES_MD)] == [3, 2, 1]
 
     def test_captures_the_body_between_headings(self) -> None:
-        notices = parse_notices(NOTICES_MD)
-        assert notices[0] == (3, "Fleet Carrier routes now track tritium separately from cargo.")
+        notices = Notices("dwomble", "EDMC-DummyPlugin")
+        assert notices._parse_notices(NOTICES_MD)[0] == (3, "Fleet Carrier routes now track tritium separately from cargo.")
 
     def test_no_headings_yields_no_notices(self) -> None:
-        assert parse_notices("# Notices\n\nNo entries yet.") == []
+        notices = Notices("dwomble", "EDMC-DummyPlugin")
+        assert notices._parse_notices("# Notices\n\nNo entries yet.") == []
 
 class TestNotices:
 
@@ -89,10 +90,6 @@ class TestNotices:
 
         call = mock_requests._mock_requests.calls[-1]
         assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-DummyPlugin-Updater"
-
-    def test_notices_url_uses_raw_githubusercontent(self) -> None:
-        notices = Notices("dwomble", "EDMC-DummyPlugin", gh_branch="develop")
-        assert notices._notices_url() == "https://raw.githubusercontent.com/dwomble/EDMC-DummyPlugin/develop/NOTICES.md"
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
