@@ -69,12 +69,15 @@ class UI:
         title.configure(font=fnt)
         # Dashboard status row: mode, pips, badges
         row += 1
-        self.mode_label:th.Button = th.Button(self.header, text="", width=20)
-        self.mode_label.grid(row=row, column=0, sticky=tk.W)
-        self.pips_label:th.Button = th.Button(self.header, text="", width=20)
-        self.pips_label.grid(row=row, column=1, sticky=tk.W, padx=(8, 8))
-        self.badges_label:th.Button = th.Button(self.header, text="", width=20)
-        self.badges_label.grid(row=row, column=2, sticky=tk.W)
+        self.mode:th.Button = th.Button(self.header, text="", width=20)
+        th.Tooltip(self.mode, "Mode flags")
+        self.mode.grid(row=row, column=0, sticky=tk.W)
+        self.pips:th.Button = th.Button(self.header, text="", width=20)
+        th.Tooltip(self.pips, "Pips")
+        self.pips.grid(row=row, column=1, sticky=tk.W, padx=(8, 8))
+        self.badges:th.Button = th.Button(self.header, text="", width=20)
+        th.Tooltip(self.pips, "Warning flags")
+        self.badges.grid(row=row, column=2, sticky=tk.W)
 
         # Scrollable display frame
         row += 1
@@ -110,9 +113,9 @@ class UI:
 
     def update_dashboard(self, entry:dict) -> None:
         """ Refresh the mode/pips/badges row from a Status.json entry. """
-        self.mode_label.configure(text=self._mode_text(entry))
-        self.pips_label.configure(text=self._pips_text(entry))
-        self.badges_label.configure(text=self._badges_text(entry))
+        self.mode.configure(text=self._mode_text(entry))
+        self.pips.configure(text=self._pips_text(entry))
+        self.badges.configure(text=self._badges_text(entry))
 
     def _mode_text(self, entry:dict) -> str:
         """ One word for where/what you're in -- first match wins. """
