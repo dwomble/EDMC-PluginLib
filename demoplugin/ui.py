@@ -24,17 +24,23 @@ _MODES:list[tuple[str, int, bool]] = [
     ("Docked", ed.FlagsDocked, False),
     ("Landed", ed.FlagsLanded, False),
     ("Supercruise", ed.FlagsSupercruise, False),
+    ("FSD Charging", ed.FlagsFsdCharging, False),
+    ("Jumping", ed.FlagsFsdJump, False),
     ("In Fighter", ed.FlagsInFighter, False),
+    ("Scooping Fuel", ed.FlagsScoopingFuel, False),
 ]
 
 # (label, bit, is_flags2) -- shown, in order, only while true
 _BADGES:list[tuple[str, int, bool]] = [
+    ("Gear Down", ed.FlagsLandingGearDown, False),
+    ("Cargo Scoop", ed.FlagsCargoScoopDeployed, False),
     ("In Danger", ed.FlagsIsInDanger, False),
     ("Interdicted", ed.FlagsBeingInterdicted, False),
     ("Low Fuel", ed.FlagsLowFuel, False),
     ("Overheating", ed.FlagsOverHeating, False),
     ("Low Health", ed.Flags2LowHealth, True),
     ("Low O2", ed.Flags2LowOxygen, True),
+    ("Handbrake On", ed.FlagsSrvHandbrake, False)
 ]
 class UI:
     """
@@ -96,8 +102,14 @@ class UI:
 
         self.toggle_button.configure(text=self._toggle_glyph())
         if self._panel_enabled:
+            self.mode.grid(row=1, column=0, sticky=tk.W)
+            self.pips.grid(row=1, column=1, sticky=tk.W, padx=(8, 8))
+            self.badges.grid(row=1, column=2, sticky=tk.W)
             self.panel.grid(row=2, column=0, sticky=tk.EW)
         else:
+            self.mode.grid_forget()
+            self.pips.grid_forget()
+            self.badges.grid_forget()
             self.panel.grid_forget()
 
     def _toggle_glyph(self) -> str:
