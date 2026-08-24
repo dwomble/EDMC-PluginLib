@@ -13,9 +13,13 @@ from demoplugin.utils.updater import Notices
 
 @pytest.fixture(autouse=True)
 def clear_mock_calls() -> Generator[None, None, None]:
-    mock_requests._mock_requests.calls.clear()
+    """ Also forces mock mode -- _use_live is a global a
+    prior harness test may have left True, and it never
+    resets on its own. """
+    previous:bool = mock_requests.live_requests()
+    mock_requests.live_requests(False)
     yield
-    mock_requests._mock_requests.calls.clear()
+    mock_requests.live_requests(previous)
 
 def _queue(text:str) -> None:
     mock_requests.queue_response("get", mock_requests.MockResponse(status_code=200, content=text))
