@@ -15,7 +15,7 @@ from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
 __all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Button", "Radiobutton", "ComboBox",
-           "Listbox", "Checkbutton", "Scale", "Spinbox", "Progressbar", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
+           "Listbox", "Checkbutton", "Scale", "Spinbox", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
@@ -211,28 +211,6 @@ class RichLabel(_RichLabel):
         self.frame.configure(background=kw['background'])
         theme.register(self.frame)
         theme.update(self)
-
-class Progressbar(ttk.Progressbar):
-    """ A themed progress bar, colored via ttk.Style (no fg/bg for theme.py to repaint). Call refresh_style() from
-        prefs_changed() for a live theme change mid-session. """
-
-    STYLE:str = "Th.Horizontal.TProgressbar"
-
-    def __init__(self, master:tk.Widget, **kw) -> None:
-        kw.setdefault('style', self.STYLE)
-        Progressbar.refresh_style()
-        ttk.Progressbar.__init__(self, master, **kw)
-        theme.update(self)
-
-    @classmethod
-    def refresh_style(cls) -> None:
-        """ Recolors every Progressbar using STYLE to match the theme. """
-        style:ttk.Style = ttk.Style()
-        if config.get_int('theme', default=0) > 0:
-            style.configure(cls.STYLE, troughcolor='grey4', background=config.get_str('dark_text') or '#ff8000')
-        else: # native colors, whatever this platform's ttk theme uses
-            style.configure(cls.STYLE, troughcolor=style.lookup('TProgressbar', 'troughcolor'),
-                             background=style.lookup('TProgressbar', 'background'))
 
 class Entry(Base):
     """ A themed entry that can switch between light and dark mode. """

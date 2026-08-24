@@ -43,7 +43,7 @@ A Library of utilities for EDMC plugins. Some utilities are drop-in ready to go,
 
 ### Features
 
-* An EDMC-theme aware library of UI objects for use in the main EDMC window (Frame, LabelFrame, ScrollableFrame, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder, Progressbar)
+* An EDMC-theme aware library of UI objects for use in the main EDMC window (Frame, LabelFrame, ScrollableFrame, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder)
 * Richtext tk objects (easily display HTML and Markdown)
 * Enhanced Treeview
 * Scrollable notebook

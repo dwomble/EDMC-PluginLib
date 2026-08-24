@@ -80,7 +80,7 @@ Note they only support `grid` not `pack` layout
 
 ### Standard tk
 
-* Theme-aware versions of the following standard objects: Frame, LabelFrame, ScrollableFrame, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder, Progressbar
+* Theme-aware versions of the following standard objects: Frame, LabelFrame, ScrollableFrame, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder
 
 ### th.ScrollableFrame
 
