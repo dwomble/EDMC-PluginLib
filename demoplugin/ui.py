@@ -21,11 +21,13 @@ DISP_FORMAT = "%m-%d %H:%M:%S"
 _MODES:list[tuple[str, int, bool]] = [
     ("On Foot", ed.Flags2OnFoot, True),
     ("In SRV", ed.FlagsInSRV, False),
+    ("In Fighter", ed.FlagsInFighter, False),
     ("Docked", ed.FlagsDocked, False),
     ("Landed", ed.FlagsLanded, False),
-    ("FSD Charging", ed.FlagsFsdCharging, False),
     ("Jumping", ed.FlagsFsdJump, False),
-    ("In Fighter", ed.FlagsInFighter, False),
+    ("FSD Charging", ed.FlagsFsdCharging, False),
+    ("Mass Locked", ed.FlagsFsdMassLocked, False),
+    ("FSD Cooldown", ed.FlagsFsdCooldown, False),
     ("Scooping Fuel", ed.FlagsScoopingFuel, False),
     ("Supercruise", ed.FlagsSupercruise, False),
 ]
