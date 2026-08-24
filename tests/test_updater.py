@@ -23,7 +23,7 @@ def clear_mock_calls() -> Generator[None, None, None]:
 
 class TestUpdaterUserAgent:
 
-    def test_get_release_sends_edmc_user_agent_plus_project_name(self, tmp_path) -> None:
+    def test_get_release_sends_agent(self, tmp_path) -> None:
         updater = Updater(str(tmp_path), "dwomble", "EDMC-DummyPlugin")
         mock_requests.queue_response("get", mock_requests.MockResponse(status_code=404))
 
@@ -32,7 +32,7 @@ class TestUpdaterUserAgent:
         call = mock_requests._mock_requests.calls[-1]
         assert call['headers']['User-Agent'] == "EDMC-TestHarness/1.0 EDMC-DummyPlugin-Updater"
 
-    def test_download_zip_sends_edmc_user_agent_plus_project_name(self, tmp_path) -> None:
+    def test_download_zip_sends_agent(self, tmp_path) -> None:
         updater = Updater(str(tmp_path), "dwomble", "EDMC-DummyPlugin")
         updater.update_version = "1.2.3" # type: ignore -- str is fine, only used for a filename here
         updater.download_url = "https://example.invalid/release.zip"
@@ -45,14 +45,14 @@ class TestUpdaterUserAgent:
 
 class TestReadVersionFile:
 
-    def test_reads_the_version_file_when_present(self, tmp_path) -> None:
+    def test_reads_version_file(self, tmp_path) -> None:
         (tmp_path / "version").write_text("1.2.3")
         assert str(read_version_file(str(tmp_path), "0.0.0-dev")) == "1.2.3"
 
-    def test_falls_back_to_default_when_no_file_exists(self, tmp_path) -> None:
+    def test_version_file_fallback(self, tmp_path) -> None:
         assert str(read_version_file(str(tmp_path), "0.1.0-dev")) == "0.1.0-dev"
 
-    def test_falls_back_to_default_when_the_file_is_unparseable(self, tmp_path) -> None:
+    def test_unparseable_version_file_fallback(self, tmp_path) -> None:
         """ e.g. a fresh git checkout with an empty/placeholder version file. """
         (tmp_path / "version").write_text("not-a-version!!")
         assert str(read_version_file(str(tmp_path), "0.1.0-dev")) == "0.1.0-dev"
