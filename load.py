@@ -14,7 +14,6 @@ from companion import CAPIData # type: ignore
 
 from demoplugin.utils.debug import Debug, catch_exceptions
 from demoplugin.utils.updater import Updater, Notices, read_version_file
-from demoplugin.utils.th import Progressbar
 from demoplugin.ui import UI
 
 PLUGIN_NAME = "DemoPlugin"
@@ -96,14 +95,14 @@ def plugin_app(parent:tk.Frame):
 
     return plugin.frame
 
-def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool):
+def plugin_prefs(parent:tk.Frame, cmdr:str, is_beta:bool):
     """ Return a TK Frame for adding to the EDMC settings dialog """
     prefs:tk.Frame = tk.Frame(parent)
     return prefs
 
-def prefs_changed(cmdr: str, is_beta: bool) -> None:
+def prefs_changed(cmdr:str, is_beta:bool) -> None:
     """ Save settings. """
-    Progressbar.refresh_style() # ttk has no fg/bg to paint
+    pass
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
     """ Parse an incoming journal entry and store the data we need """
