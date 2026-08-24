@@ -23,15 +23,15 @@ _MODES:list[tuple[str, int, bool]] = [
     ("In SRV", ed.FlagsInSRV, False),
     ("Docked", ed.FlagsDocked, False),
     ("Landed", ed.FlagsLanded, False),
-    ("Supercruise", ed.FlagsSupercruise, False),
     ("FSD Charging", ed.FlagsFsdCharging, False),
     ("Jumping", ed.FlagsFsdJump, False),
     ("In Fighter", ed.FlagsInFighter, False),
     ("Scooping Fuel", ed.FlagsScoopingFuel, False),
+    ("Supercruise", ed.FlagsSupercruise, False),
 ]
 
 _FOCUS:dict[int, str] = {
-    ed.GuiFocusNoFocus: "None",
+    ed.GuiFocusNoFocus: "",
     ed.GuiFocusInternalPanel: "Internal",
     ed.GuiFocusExternalPanel: "External",
     ed.GuiFocusCommsPanel: "Comms",
@@ -146,6 +146,7 @@ class UI:
     def update_dashboard(self, entry:dict) -> None:
         """ Refresh the mode/pips/badges row from a Status.json entry. """
         self.mode.configure(text=self._mode_text(entry))
+        self.gui.configure(text=self._gui_text(entry))
         self.pips.configure(text=self._pips_text(entry))
         self.badges.configure(text=self._badges_text(entry))
 
