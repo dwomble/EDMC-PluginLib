@@ -44,7 +44,7 @@ def dismiss_notice(tkEvent = None) -> None:
     plugin.frame.update_idletasks()
 ```
 
-**NOTICES.md**
+### NOTICES.md
 
 ```markdown
 # Notices
