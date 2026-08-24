@@ -213,9 +213,8 @@ class RichLabel(_RichLabel):
         theme.update(self)
 
 class Progressbar(ttk.Progressbar):
-    """ A themed progress bar, colored via ttk.Style (no fg/bg for
-    theme.py to repaint). Call refresh_style() from your own
-    prefs_changed() for a live theme change mid-session. """
+    """ A themed progress bar, colored via ttk.Style (no fg/bg for theme.py to repaint). Call refresh_style() from
+        prefs_changed() for a live theme change mid-session. """
 
     STYLE:str = "Th.Horizontal.TProgressbar"
 

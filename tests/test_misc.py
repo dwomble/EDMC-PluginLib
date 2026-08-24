@@ -65,7 +65,8 @@ class TestInitialization:
         assert harness.parent is not None
 
         assert plugin.plugin_dir == str(harness.plugin_dir)
-        assert plugin.parent == harness.parent
+        assert plugin.frame is not None
+        assert plugin.frame.master == harness.parent
 
     def test_load_state(self, harness:TestHarness) -> None:
         """Test that state files are loaded correctly."""

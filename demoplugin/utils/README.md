@@ -2,20 +2,58 @@
 
 A Library of useful utilities for EDMC plugins.
 
-## Updater
+## Updater and Notifier
 
 A class to check if a new release of the plugin is available, download the zip asset, and install it on exit.
 
 ```python
 from utils.updater import Updater
 
-def plugin_start3(plugin_dir) -> None:
+def plugin_start3(plugin_dir) -> str:
     updater = Updater(plugin_dir)
     updater.check_for_update(plugin_version, plugin_name)
+    return NAME
 
 def plugin_stop() -> None:
     if updater.install_update:
         updater.install()
+```
+
+A class to display a notice in the UI.
+
+```python
+from utils.updater import Notices
+
+def plugin_start3(plugin_dir):
+    plugin.notices = Notices(GH_OWNER, GH_PROJECT, GH_MAIN)
+    plugin.notices.check_for_notices()
+
+    return PLUGIN_NAME
+
+def show_notice() -> None:
+    global notice
+    if not plugin.notices or not plugin.notices.pending_notice:
+        return
+    notice:th.RichText = th.RichText(plugin.frame, width=60, height=2, markdown=Context.notices.pending_notice)
+    notice.bind("<Button-1>", partial(self.dismiss_notice))
+    notice.grid(row=0, column=0, sticky=tk.W)
+
+def dismiss_notice(tkEvent = None) -> None:
+    plugin.notices.dismiss_notice()
+    notice.destroy()
+    plugin.frame.update_idletasks()
+```
+
+**NOTICES.md**
+
+```markdown
+# Notices
+
+## 2
+A **second** notification.
+
+## 1
+A **first** notification.
 ```
 
 ## Debug
@@ -42,7 +80,7 @@ Note they only support `grid` not `pack` layout
 
 ### Standard tk
 
-Theme-aware versions of the following standard objects: TopLevel, Frame, LabelFrame, Label, Entry, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox.
+* Theme-aware versions of the following standard objects: Frame, LabelFrame, ScrollableFrame, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder, Progressbar
 
 ### th.ScrollableFrame
 

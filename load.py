@@ -13,7 +13,8 @@ from typing import Dict
 from companion import CAPIData # type: ignore
 
 from demoplugin.utils.debug import Debug, catch_exceptions
-from demoplugin.utils.updater import Updater, read_version_file
+from demoplugin.utils.updater import Updater, Notices, read_version_file
+from demoplugin.utils.th import Progressbar
 from demoplugin.ui import UI
 
 PLUGIN_NAME = "DemoPlugin"
@@ -21,12 +22,14 @@ VERSION = "0.0.0" # placeholder -- plugin_start3() overwrites this
 
 GH_OWNER = "dwomble" # Github owner name
 GH_PROJECT = 'EDMC-DemoPlugin' #  Github project name
+GH_MAIN = "main" # Github main branch name
 
 @dataclass
 class plugin:
     plugin_dir:str = ""
     updater:Updater|None = None
-    parent:tk.Frame|None = None
+    notices:Notices|None = None
+    frame:tk.Frame|None = None
     ui:UI|None = None
     closing:bool = False
 
@@ -73,6 +76,9 @@ def plugin_start3(plugin_dir):
     # Let's not since this is a dummy plugin
     #plugin.updater.check_for_update(version)
 
+    plugin.notices = Notices(GH_OWNER, GH_PROJECT, GH_MAIN)
+    plugin.notices.check_for_notices()
+
     return PLUGIN_NAME
 
 def plugin_stop():
@@ -85,11 +91,10 @@ def plugin_stop():
 @catch_exceptions
 def plugin_app(parent:tk.Frame):
     """ Return a TK Frame for adding to the EDMC main window """
-    plugin.parent = parent
-    frame:tk.Frame = tk.Frame(parent)
-    plugin.ui = UI(frame)
+    plugin.frame = tk.Frame(parent)
+    plugin.ui = UI(plugin.frame)
 
-    return frame
+    return plugin.frame
 
 def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool):
     """ Return a TK Frame for adding to the EDMC settings dialog """
@@ -98,7 +103,7 @@ def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool):
 
 def prefs_changed(cmdr: str, is_beta: bool) -> None:
     """ Save settings. """
-    pass
+    Progressbar.refresh_style() # ttk has no fg/bg to paint
 
 def journal_entry(cmdr, is_beta, system, station, entry, state):
     """ Parse an incoming journal entry and store the data we need """
