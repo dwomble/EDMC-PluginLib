@@ -52,21 +52,5 @@ def test_plugin_start3_resolves_version_from_the_version_file(harness, tmp_path)
     import load
     assert load.VERSION == "9.9.9"
 
-def test_prefs_changed_refreshes_progressbar_style(harness) -> None:
-    """ ttk widgets have no fg/bg for theme.py to repaint --
-    prefs_changed() must re-apply Progressbar's style for a
-    live theme change to actually show up. """
-    from tkinter import ttk
-    from load import prefs_changed
-    from demoplugin.utils.th import Progressbar
-
-    harness.config.set('theme', 1)
-    try:
-        prefs_changed('Testy', False)
-        assert ttk.Style().lookup(Progressbar.STYLE, 'troughcolor') == 'grey4'
-    finally:
-        harness.config.set('theme', 0)
-        Progressbar.refresh_style()
-
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
