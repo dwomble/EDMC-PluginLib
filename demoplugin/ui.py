@@ -163,7 +163,7 @@ class UI:
 
     def _gui_text(self, entry:dict) -> str:
         """ GUI Focus"""
-        return _FOCUS[entry['GuiFocus']]
+        return _FOCUS[entry.get('GuiFocus', ed.GuiFocusNoFocus)]
 
     def _pips_text(self, entry:dict) -> str:
         """ Sys/Eng/Wep in whole pips -- Status.json stores half-pips. """
