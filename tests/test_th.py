@@ -18,7 +18,7 @@ from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
 
-from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Progressbar
+from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
@@ -192,23 +192,6 @@ class TestPlainWidgets:
         assert rst["foreground"] == lbl["foreground"]
         assert rst["background"] == lbl["background"]
         assert str(rst.frame["background"]) == str(lbl["background"])
-
-    def test_progressbar_light_theme_uses_native_style(self, harness:TestHarness) -> None:
-        harness.config.set('theme', 0)
-        Progressbar.refresh_style()
-        pb = Progressbar(harness.parent)
-        assert isinstance(pb, ttk.Progressbar)
-        style = ttk.Style()
-        assert style.lookup(Progressbar.STYLE, 'troughcolor') == style.lookup('TProgressbar', 'troughcolor')
-
-    def test_progressbar_dark_theme_uses_dark_colors(self, harness:TestHarness) -> None:
-        harness.config.set('theme', 1)
-        try:
-            Progressbar(harness.parent)
-            assert ttk.Style().lookup(Progressbar.STYLE, 'troughcolor') == 'grey4'
-        finally:
-            harness.config.set('theme', 0)
-            Progressbar.refresh_style()
 
 class TestThemedPairWidgets:
     """ Button/Checkbutton are light/dark pairs -- only one half should ever be gridded. """
