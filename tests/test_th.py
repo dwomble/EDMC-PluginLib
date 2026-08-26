@@ -16,9 +16,10 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Generator
 
+from theme import theme # type: ignore
 from harness import TestHarness, reset_plugin_modules
 
-from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText
+from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Autocompleter
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
@@ -208,6 +209,30 @@ class TestThemedPairWidgets:
 
         # Variable should be shared between the two halves of the pair, so that checking one checks the other.
         assert str(cb.obj["variable"]) == str(var) == str(cb.alt["variable"])
+
+class TestAutocompleterPopup:
+    """ show_list()'s popup must match the main window's own
+    "Always on top" state -- an overrideredirect popup doesn't
+    auto-restack above a topmost parent otherwise. """
+
+    def test_popup_matches_parent_topmost_state(self, harness:TestHarness, monkeypatch) -> None:
+        root:tk.Misc = harness.parent.winfo_toplevel()
+        ac = Autocompleter(harness.parent, "placeholder", func=lambda s: ["Sol"])
+        # Real focus assignment is unreliable headless -- show_list()'s
+        # own guard only cares that focus_get() reports this widget.
+        monkeypatch.setattr(ac.parent, 'focus_get', lambda: ac)
+        # MockTheme never populates .current -- real EDMC's theme.apply() does.
+        monkeypatch.setattr(theme, 'current', {
+            'background': 'grey', 'foreground': 'white',
+            'activebackground': 'grey', 'activeforeground': 'white',
+        }, raising=False)
+        root.attributes('-topmost', True)
+        try:
+            ac.show_list(1, 10)
+            assert bool(ac.popup.attributes('-topmost')) is True
+        finally:
+            root.attributes('-topmost', False)
+            ac.destroy()
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
