@@ -10,7 +10,9 @@ It displays journal events as they occur and stores the latest journal, dashboar
 import tkinter as tk
 from dataclasses import dataclass, field
 from typing import Dict
+
 from companion import CAPIData # type: ignore
+import myNotebook as nb # type: ignore
 
 from demoplugin.utils.debug import Debug, catch_exceptions
 from demoplugin.utils.updater import Updater, Notices, read_version_file
@@ -97,7 +99,7 @@ def plugin_app(parent:tk.Frame):
 
 def plugin_prefs(parent:tk.Frame, cmdr:str, is_beta:bool):
     """ Return a TK Frame for adding to the EDMC settings dialog """
-    prefs:tk.Frame = tk.Frame(parent)
+    prefs:nb.Frame = nb.Frame(parent)
     return prefs
 
 def prefs_changed(cmdr:str, is_beta:bool) -> None:
