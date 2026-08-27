@@ -179,6 +179,11 @@ class Autocompleter(Placeholder):
             y:int = self.winfo_rooty() + self.winfo_height()
             self.popup.wm_geometry(f"+{x}+{y}")
             self.popup.deiconify() # Show the popup
+            # After deiconify() -- it resets -topmost on a
+            # withdrawn overrideredirect window. Matches
+            # "Always on top", or this can render behind it.
+            self.popup.attributes('-topmost', self.parent.winfo_toplevel().attributes('-topmost'))
+            self.popup.lift()
             self.lb_up = True
 
     def hide_list(self) -> None:
