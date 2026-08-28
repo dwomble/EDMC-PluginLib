@@ -82,17 +82,17 @@ class TestModeText:
 
 class TestPipsText:
 
-    def test_formats_half_pips_as_whole_pips(self, harness:TestHarness) -> None:
+    def test_formats_half_pips(self, harness:TestHarness) -> None:
         assert plugin.ui is not None
         assert plugin.ui._pips_text({"Pips": [6, 6, 4]}) == "3/3/2"
 
-    def test_defaults_to_four_four_four(self, harness:TestHarness) -> None:
+    def test_pip_defaults(self, harness:TestHarness) -> None:
         assert plugin.ui is not None
         assert plugin.ui._pips_text({}) == "4/4/4"
 
 class TestBadgesText:
 
-    def test_empty_when_nothing_is_wrong(self, harness:TestHarness) -> None:
+    def test_empty(self, harness:TestHarness) -> None:
         assert plugin.ui is not None
         assert plugin.ui._badges_text({"Flags": FlagsDocked}) == ""
 
@@ -100,7 +100,7 @@ class TestBadgesText:
         assert plugin.ui is not None
         assert plugin.ui._badges_text({"Flags": FlagsLowFuel}) == _label_for(_BADGES, FlagsLowFuel)
 
-    def test_multiple_badges_in_order(self, harness:TestHarness) -> None:
+    def test_multiple_badges(self, harness:TestHarness) -> None:
         flags:int = FlagsIsInDanger | FlagsOverHeating
         expected:str = "  ".join([_label_for(_BADGES, FlagsIsInDanger), _label_for(_BADGES, FlagsOverHeating)])
         assert plugin.ui is not None
@@ -111,7 +111,7 @@ class TestBadgesText:
         assert plugin.ui._badges_text({"Flags2": Flags2LowHealth}) == _label_for(_BADGES, Flags2LowHealth, is_flags2=True)
 
 class TestDashboardUI:
-    def test_updates_mode_and_pips_and_hides_badges_when_clean(self, harness:TestHarness) -> None:
+    def test_updates_mode(self, harness:TestHarness) -> None:
         harness.fire_dashboard_event({"Flags": FlagsDocked, "Pips": [8, 0, 8]})
 
         from load import plugin
@@ -120,7 +120,7 @@ class TestDashboardUI:
         assert plugin.ui.pips.cget("text") == "4/0/4"
         assert plugin.ui.badges.cget("text") == ""
 
-    def test_shows_and_updates_badges_when_something_is_wrong(self, harness:TestHarness) -> None:
+    def test_shows_warnings(self, harness:TestHarness) -> None:
         harness.fire_dashboard_event({"Flags": FlagsLowFuel})
 
         from load import plugin

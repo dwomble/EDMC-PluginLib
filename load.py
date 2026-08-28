@@ -54,7 +54,7 @@ class Journal:
 
 @dataclass
 class Carrier:
-    data:CAPIData|None = None
+    data = None
 
 plugin:Plugin = Plugin()
 dashboard:Dashboard = Dashboard()
