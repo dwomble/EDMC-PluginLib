@@ -85,7 +85,7 @@ def plugin_start3(plugin_dir):
 def plugin_stop():
     """ EDMC is closing """
     if plugin.updater and plugin.updater.install_update:
-        plugin.updater.install()
+        plugin.updater.install(["data"])
 
     plugin.closing = True
 
