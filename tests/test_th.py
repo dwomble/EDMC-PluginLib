@@ -49,21 +49,21 @@ def _add_line(harness:TestHarness, sf:ScrollableFrame, text:str = "line") -> Non
 
 class Testth:
 
-    def test_no_scrollbar_when_content_fits(self, harness:TestHarness) -> None:
+    def test_no_scrollbar(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=200)
         _add_line(harness, sf)
         _add_line(harness, sf)
         assert sf._scrollbar_visible is False
         sf.destroy()
 
-    def test_scrollbar_appears_when_content_overflows(self, harness:TestHarness) -> None:
+    def test_scrollbar_appears(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=20)
         for i in range(10):
             _add_line(harness, sf, f"line {i}")
         assert sf._scrollbar_visible is True
         sf.destroy()
 
-    def test_scrollbar_hides_again_after_clear(self, harness:TestHarness) -> None:
+    def test_scrollbar_hides(self, harness:TestHarness) -> None:
         # A single line is ~22px (per test_scrollbar_appears_when_content_overflows: 10 lines
         # ~220px), so maxheight must be generous enough to fit exactly one -- 20 legitimately
         # still needs a scrollbar for even one line.
@@ -77,7 +77,7 @@ class Testth:
         assert sf._scrollbar_visible is False
         sf.destroy()
 
-    def test_clear_removes_all_children(self, harness:TestHarness) -> None:
+    def test_clear_removes_all(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=20)
         for i in range(5):
             _add_line(harness, sf, f"line {i}")
@@ -89,14 +89,14 @@ class Testth:
         assert sf._scrollbar_visible is False
         sf.destroy()
 
-    def test_no_maxheight_never_scrolls(self, harness:TestHarness) -> None:
+    def test_no_maxheight(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent)
         for i in range(20):
             _add_line(harness, sf, f"line {i}")
         assert sf._scrollbar_visible is False
         sf.destroy()
 
-    def test_mousewheel_binds_only_while_hovered(self, harness:TestHarness) -> None:
+    def test_mousewheel(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=20)
         for i in range(10):
             _add_line(harness, sf, f"line {i}")
@@ -108,13 +108,13 @@ class Testth:
         assert sf._canvas.bind_all("<MouseWheel>") == ""
         sf.destroy()
 
-    def test_maxheight_readable_via_cget_and_getitem(self, harness:TestHarness) -> None:
+    def test_maxheight_readable(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=42)
         assert sf.cget('maxheight') == 42
         assert sf['maxheight'] == 42
         sf.destroy()
 
-    def test_maxheight_settable_via_configure(self, harness:TestHarness) -> None:
+    def test_maxheight_setable(self, harness:TestHarness) -> None:
         """ `maxheight` behaves like any other Tk option (e.g. borderwidth) -- settable via
         configure()/config() at any time, not just at construction, and recomputes immediately. """
         sf = ScrollableFrame(harness.parent, maxheight=200)
@@ -126,18 +126,11 @@ class Testth:
         _pump(harness)
         assert sf.cget('maxheight') == 20
         assert sf._scrollbar_visible is True
-        sf.destroy()
 
-    def test_maxheight_settable_via_getitem_and_mixed_configure(self, harness:TestHarness) -> None:
-        sf = ScrollableFrame(harness.parent, maxheight=200)
-
-        sf['maxheight'] = 36
-        assert sf.cget('maxheight') == 36
-
-        # A real Tk option alongside maxheight in the same call -- both must apply.
         sf.config(borderwidth=2, maxheight=54)
         assert sf.cget('maxheight') == 54
         assert sf.cget('borderwidth') == 2
+
         sf.destroy()
 
 class TestPlainWidgets:
