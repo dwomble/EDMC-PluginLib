@@ -44,7 +44,7 @@ def dismiss_notice(tkEvent = None) -> None:
     plugin.frame.update_idletasks()
 ```
 
-### NOTICES.md
+### Example NOTICES.md
 
 ```markdown
 # Notices
@@ -58,7 +58,7 @@ A **first** notification.
 
 ## Debug
 
-A class for EDMC logging that automatically registers a debug handler and adjusts the debug level dependent on whether the plugin is in development mode and a decorator to automatically catch and log runtime errors.
+A class for EDMC logging that automatically registers a debug handler and adjusts the debug level dependent on whether the plugin is in development mode. Also a decorator to automatically catch and log runtime errors that may not get caught by EDMC or caught too late by EDMC.
 
 ```python
 from utils.debug import Debug, catch_exceptions
@@ -76,7 +76,7 @@ my_func()
 
 These are suitable for the main EDMC window and will automatically adapt to regular, dark or transparent modes. Just like EDMC they use ttk objects where possible for light mode and tk equivalents for dark and transparent.
 
-Note they only support `grid` not `pack` layout
+Note they only support `grid` not `pack` layout and scrollbars are OS native so cannot be made to adjust to the dark or transparent theme.
 
 ### Standard tk
 
@@ -106,7 +106,7 @@ An themed tk.Entry class that supports placeholder text and a callback function 
 def callback(inp:str) -> list:
     """ Function called by Autocompleter """
     try:
-        results:requests.Response = requests.get(my_endpoint, params={'q': inp.strip()}, timeout=3)
+        results:requests.Response = session.get(my_endpoint, params={'q': inp.strip()}, timeout=3)
     except:
         return [inp]
     return json.loads(results.content)
