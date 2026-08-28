@@ -5,18 +5,19 @@ from datetime import datetime, timezone
 import tkinter as tk
 from tkinter import font
 
+from config import config # type: ignore
 import edmc_data as ed # type: ignore
 
 import demoplugin.utils.th as th
 
 MAX_HEIGHT:int = 100 # Pixels
 BADGE_COLOR:str = "orange" # reads well in both light and dark theme
+PANEL_ENABLED:str = f"PluginLib-PanelEnabled"
 PANEL_SHOWN_GLYPH:str = "\U0001F648" # see-no-evil monkey -- "pause" analog while visible
 PANEL_HIDDEN_GLYPH:str = "\U0001F441" # eye -- "play" analog while hidden
 
 JOURNAL_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 DISP_FORMAT = "%m-%d %H:%M:%S"
-
 # (label, bit, is_flags2) -- first match in order wins
 _MODES:list[tuple[str, int, bool]] = [
     ("On Foot", ed.Flags2OnFoot, True),
@@ -67,7 +68,8 @@ class UI:
     """
 
     def __init__(self, parent:tk.Frame):
-        self._panel_enabled:bool = True
+        self._panel_enabled:bool = config.get_bool(PANEL_ENABLED, default=True)
+
 
         self.frame:th.Frame = th.Frame(parent)
         self.frame.grid(row=0, column=0, sticky=tk.NSEW)
@@ -115,10 +117,19 @@ class UI:
         self.content:th.Text = th.Text(self.panel.interior, wrap=tk.WORD)
         self.content.grid(row=0, column=0)
 
+        if self._panel_enabled:
+            return
 
-    def _toggle_panel(self) -> None:
+        # Hide the panel
+        parent.after(10, lambda: self._toggle_panel(False))
+
+
+    def _toggle_panel(self, show:bool|None = None) -> None:
         """ Shows/hides content; collection keeps going. """
         self._panel_enabled = not self._panel_enabled
+        if show != None:
+            self._panel_enabled = show
+        config.set(PANEL_ENABLED, self._panel_enabled)
 
         self.toggle_button.configure(text=self._toggle_glyph())
         if self._panel_enabled:
@@ -127,12 +138,13 @@ class UI:
             self.pips.grid(row=1, column=2, padx=2, sticky=tk.W)
             self.badges.grid(row=1, column=3, padx=(2, 0), sticky=tk.W)
             self.panel.grid(row=2, column=0, sticky=tk.EW)
-        else:
-            self.mode.grid_forget()
-            self.gui.grid_forget()
-            self.pips.grid_forget()
-            self.badges.grid_forget()
-            self.panel.grid_forget()
+            return
+
+        self.mode.grid_forget()
+        self.gui.grid_forget()
+        self.pips.grid_forget()
+        self.badges.grid_forget()
+        self.panel.grid_forget()
 
     def _toggle_glyph(self) -> str:
         return PANEL_SHOWN_GLYPH if self._panel_enabled else PANEL_HIDDEN_GLYPH

@@ -19,14 +19,15 @@ from demoplugin.utils.updater import Updater, Notices, read_version_file
 from demoplugin.ui import UI
 
 PLUGIN_NAME = "DemoPlugin"
-VERSION = "0.0.0" # placeholder -- plugin_start3() overwrites this
 
 GH_OWNER = "dwomble" # Github owner name
 GH_PROJECT = 'EDMC-DemoPlugin' #  Github project name
 GH_MAIN = "main" # Github main branch name
 
 @dataclass
-class plugin:
+class Plugin:
+    name:str = PLUGIN_NAME
+    version:str = "0.0.0"
     plugin_dir:str = ""
     updater:Updater|None = None
     notices:Notices|None = None
@@ -35,7 +36,7 @@ class plugin:
     closing:bool = False
 
 @dataclass
-class dashboard:
+class Dashboard:
     cmdr:str = ""
     is_beta:bool = False
     entry:Dict[str, int] = field(default_factory=dict)
@@ -43,7 +44,7 @@ class dashboard:
     frame:tk.Frame|None = None
 
 @dataclass
-class journal:
+class Journal:
     cmdr:str = ""
     is_beta:bool = False
     system:str = ""
@@ -52,8 +53,13 @@ class journal:
     state:Dict[str, int] = field(default_factory=dict)
 
 @dataclass
-class carrier:
-    data:CAPIData
+class Carrier:
+    data:CAPIData|None = None
+
+plugin:Plugin = Plugin()
+dashboard:Dashboard = Dashboard()
+journal:Journal = Journal()
+carrier:Carrier = Carrier()
 
 def get_overlay(modern:bool):
     """ Try loading an overlay plugin. Return True if it was successful, False if not. """
@@ -68,10 +74,9 @@ def get_overlay(modern:bool):
 
 def plugin_start3(plugin_dir):
     """ Load this plugin into EDMC """
-    global VERSION
     version = read_version_file(plugin_dir, "0.0.0")
-    VERSION = str(version)
 
+    plugin.version = str(version)
     plugin.plugin_dir = plugin_dir
     plugin.updater = Updater(str(plugin.plugin_dir), GH_OWNER, GH_PROJECT)
     # Let's not since this is a dummy plugin
