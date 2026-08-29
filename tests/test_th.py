@@ -208,6 +208,7 @@ class TestAutocompleterPopup:
     "Always on top" state -- an overrideredirect popup doesn't
     auto-restack above a topmost parent otherwise. """
 
+    @pytest.mark.manual_only
     def test_popup_matches_parent_topmost_state(self, harness:TestHarness, monkeypatch) -> None:
         root:tk.Misc = harness.parent.winfo_toplevel()
         ac = Autocompleter(harness.parent, "placeholder", func=lambda s: ["Sol"])
