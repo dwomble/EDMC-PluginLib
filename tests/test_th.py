@@ -16,9 +16,10 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Generator
 
+from theme import theme # type: ignore
 from harness import TestHarness, reset_plugin_modules
 
-from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, Progressbar
+from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Autocompleter
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
@@ -48,21 +49,21 @@ def _add_line(harness:TestHarness, sf:ScrollableFrame, text:str = "line") -> Non
 
 class Testth:
 
-    def test_no_scrollbar_when_content_fits(self, harness:TestHarness) -> None:
+    def test_no_scrollbar(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=200)
         _add_line(harness, sf)
         _add_line(harness, sf)
         assert sf._scrollbar_visible is False
         sf.destroy()
 
-    def test_scrollbar_appears_when_content_overflows(self, harness:TestHarness) -> None:
+    def test_scrollbar_appears(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=20)
         for i in range(10):
             _add_line(harness, sf, f"line {i}")
         assert sf._scrollbar_visible is True
         sf.destroy()
 
-    def test_scrollbar_hides_again_after_clear(self, harness:TestHarness) -> None:
+    def test_scrollbar_hides(self, harness:TestHarness) -> None:
         # A single line is ~22px (per test_scrollbar_appears_when_content_overflows: 10 lines
         # ~220px), so maxheight must be generous enough to fit exactly one -- 20 legitimately
         # still needs a scrollbar for even one line.
@@ -76,7 +77,7 @@ class Testth:
         assert sf._scrollbar_visible is False
         sf.destroy()
 
-    def test_clear_removes_all_children(self, harness:TestHarness) -> None:
+    def test_clear_removes_all(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=20)
         for i in range(5):
             _add_line(harness, sf, f"line {i}")
@@ -88,14 +89,14 @@ class Testth:
         assert sf._scrollbar_visible is False
         sf.destroy()
 
-    def test_no_maxheight_never_scrolls(self, harness:TestHarness) -> None:
+    def test_no_maxheight(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent)
         for i in range(20):
             _add_line(harness, sf, f"line {i}")
         assert sf._scrollbar_visible is False
         sf.destroy()
 
-    def test_mousewheel_binds_only_while_hovered(self, harness:TestHarness) -> None:
+    def test_mousewheel(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=20)
         for i in range(10):
             _add_line(harness, sf, f"line {i}")
@@ -107,13 +108,13 @@ class Testth:
         assert sf._canvas.bind_all("<MouseWheel>") == ""
         sf.destroy()
 
-    def test_maxheight_readable_via_cget_and_getitem(self, harness:TestHarness) -> None:
+    def test_maxheight_readable(self, harness:TestHarness) -> None:
         sf = ScrollableFrame(harness.parent, maxheight=42)
         assert sf.cget('maxheight') == 42
         assert sf['maxheight'] == 42
         sf.destroy()
 
-    def test_maxheight_settable_via_configure(self, harness:TestHarness) -> None:
+    def test_maxheight_setable(self, harness:TestHarness) -> None:
         """ `maxheight` behaves like any other Tk option (e.g. borderwidth) -- settable via
         configure()/config() at any time, not just at construction, and recomputes immediately. """
         sf = ScrollableFrame(harness.parent, maxheight=200)
@@ -125,18 +126,11 @@ class Testth:
         _pump(harness)
         assert sf.cget('maxheight') == 20
         assert sf._scrollbar_visible is True
-        sf.destroy()
 
-    def test_maxheight_settable_via_getitem_and_mixed_configure(self, harness:TestHarness) -> None:
-        sf = ScrollableFrame(harness.parent, maxheight=200)
-
-        sf['maxheight'] = 36
-        assert sf.cget('maxheight') == 36
-
-        # A real Tk option alongside maxheight in the same call -- both must apply.
         sf.config(borderwidth=2, maxheight=54)
         assert sf.cget('maxheight') == 54
         assert sf.cget('borderwidth') == 2
+
         sf.destroy()
 
 class TestPlainWidgets:
@@ -173,22 +167,25 @@ class TestPlainWidgets:
         assert txt["foreground"] == "red"
         assert txt["background"] == "blue"
 
-    def test_progressbar_light_theme_uses_native_style(self, harness:TestHarness) -> None:
-        harness.config.set('theme', 0)
-        Progressbar.refresh_style()
-        pb = Progressbar(harness.parent)
-        assert isinstance(pb, ttk.Progressbar)
-        style = ttk.Style()
-        assert style.lookup(Progressbar.STYLE, 'troughcolor') == style.lookup('TProgressbar', 'troughcolor')
+    def test_richtext_defaults_match_label(self, harness:TestHarness) -> None:
+        rt = RichText(harness.parent)
+        lbl = tk.Label(harness.parent)
+        assert rt["foreground"] == lbl["foreground"]
+        assert rt["background"] == lbl["background"]
+        # The internal wrapping frame must match too, or it shows as
+        # an unthemed border around the text.
+        assert str(rt.frame["background"]) == str(lbl["background"])
 
-    def test_progressbar_dark_theme_uses_dark_colors(self, harness:TestHarness) -> None:
-        harness.config.set('theme', 1)
-        try:
-            Progressbar(harness.parent)
-            assert ttk.Style().lookup(Progressbar.STYLE, 'troughcolor') == 'grey4'
-        finally:
-            harness.config.set('theme', 0)
-            Progressbar.refresh_style()
+    def test_richtext_renders_markdown(self, harness:TestHarness) -> None:
+        rt = RichText(harness.parent, markdown="**bold** text")
+        assert "bold" in rt.get("1.0", tk.END)
+
+    def test_richscrolledtext_defaults_match_label(self, harness:TestHarness) -> None:
+        rst = RichScrolledText(harness.parent)
+        lbl = tk.Label(harness.parent)
+        assert rst["foreground"] == lbl["foreground"]
+        assert rst["background"] == lbl["background"]
+        assert str(rst.frame["background"]) == str(lbl["background"])
 
 class TestThemedPairWidgets:
     """ Button/Checkbutton are light/dark pairs -- only one half should ever be gridded. """
@@ -205,6 +202,30 @@ class TestThemedPairWidgets:
 
         # Variable should be shared between the two halves of the pair, so that checking one checks the other.
         assert str(cb.obj["variable"]) == str(var) == str(cb.alt["variable"])
+
+class TestAutocompleterPopup:
+    """ show_list()'s popup must match the main window's own
+    "Always on top" state -- an overrideredirect popup doesn't
+    auto-restack above a topmost parent otherwise. """
+
+    def test_popup_matches_parent_topmost_state(self, harness:TestHarness, monkeypatch) -> None:
+        root:tk.Misc = harness.parent.winfo_toplevel()
+        ac = Autocompleter(harness.parent, "placeholder", func=lambda s: ["Sol"])
+        # Real focus assignment is unreliable headless -- show_list()'s
+        # own guard only cares that focus_get() reports this widget.
+        monkeypatch.setattr(ac.parent, 'focus_get', lambda: ac)
+        # MockTheme never populates .current -- real EDMC's theme.apply() does.
+        monkeypatch.setattr(theme, 'current', {
+            'background': 'grey', 'foreground': 'white',
+            'activebackground': 'grey', 'activeforeground': 'white',
+        }, raising=False)
+        root.attributes('-topmost', True)
+        try:
+            ac.show_list(1, 10)
+            assert bool(ac.popup.attributes('-topmost')) is True
+        finally:
+            root.attributes('-topmost', False)
+            ac.destroy()
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

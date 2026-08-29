@@ -10,28 +10,33 @@ It displays journal events as they occur and stores the latest journal, dashboar
 import tkinter as tk
 from dataclasses import dataclass, field
 from typing import Dict
+
 from companion import CAPIData # type: ignore
+import myNotebook as nb # type: ignore
 
 from demoplugin.utils.debug import Debug, catch_exceptions
-from demoplugin.utils.updater import Updater, read_version_file
+from demoplugin.utils.updater import Updater, Notices, read_version_file
 from demoplugin.ui import UI
 
 PLUGIN_NAME = "DemoPlugin"
-VERSION = "0.0.0" # placeholder -- plugin_start3() overwrites this
 
 GH_OWNER = "dwomble" # Github owner name
 GH_PROJECT = 'EDMC-DemoPlugin' #  Github project name
+GH_MAIN = "main" # Github main branch name
 
 @dataclass
-class plugin:
+class Plugin:
+    name:str = PLUGIN_NAME
+    version:str = "0.0.0"
     plugin_dir:str = ""
     updater:Updater|None = None
-    parent:tk.Frame|None = None
+    notices:Notices|None = None
+    frame:tk.Frame|None = None
     ui:UI|None = None
     closing:bool = False
 
 @dataclass
-class dashboard:
+class Dashboard:
     cmdr:str = ""
     is_beta:bool = False
     entry:Dict[str, int] = field(default_factory=dict)
@@ -39,7 +44,7 @@ class dashboard:
     frame:tk.Frame|None = None
 
 @dataclass
-class journal:
+class Journal:
     cmdr:str = ""
     is_beta:bool = False
     system:str = ""
@@ -48,8 +53,13 @@ class journal:
     state:Dict[str, int] = field(default_factory=dict)
 
 @dataclass
-class carrier:
-    data:CAPIData
+class Carrier:
+    data = None
+
+plugin:Plugin = Plugin()
+dashboard:Dashboard = Dashboard()
+journal:Journal = Journal()
+carrier:Carrier = Carrier()
 
 def get_overlay(modern:bool):
     """ Try loading an overlay plugin. Return True if it was successful, False if not. """
@@ -64,39 +74,40 @@ def get_overlay(modern:bool):
 
 def plugin_start3(plugin_dir):
     """ Load this plugin into EDMC """
-    global VERSION
     version = read_version_file(plugin_dir, "0.0.0")
-    VERSION = str(version)
 
+    plugin.version = str(version)
     plugin.plugin_dir = plugin_dir
     plugin.updater = Updater(str(plugin.plugin_dir), GH_OWNER, GH_PROJECT)
     # Let's not since this is a dummy plugin
     #plugin.updater.check_for_update(version)
+
+    plugin.notices = Notices(GH_OWNER, GH_PROJECT, GH_MAIN)
+    plugin.notices.check_for_notices()
 
     return PLUGIN_NAME
 
 def plugin_stop():
     """ EDMC is closing """
     if plugin.updater and plugin.updater.install_update:
-        plugin.updater.install()
+        plugin.updater.install(["data"])
 
     plugin.closing = True
 
 @catch_exceptions
 def plugin_app(parent:tk.Frame):
     """ Return a TK Frame for adding to the EDMC main window """
-    plugin.parent = parent
-    frame:tk.Frame = tk.Frame(parent)
-    plugin.ui = UI(frame)
+    plugin.frame = tk.Frame(parent)
+    plugin.ui = UI(plugin.frame)
 
-    return frame
+    return plugin.frame
 
-def plugin_prefs(parent:tk.Frame, cmdr: str, is_beta: bool):
+def plugin_prefs(parent:tk.Frame, cmdr:str, is_beta:bool):
     """ Return a TK Frame for adding to the EDMC settings dialog """
-    prefs:tk.Frame = tk.Frame(parent)
+    prefs:nb.Frame = nb.Frame(parent)
     return prefs
 
-def prefs_changed(cmdr: str, is_beta: bool) -> None:
+def prefs_changed(cmdr:str, is_beta:bool) -> None:
     """ Save settings. """
     pass
 

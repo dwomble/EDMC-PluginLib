@@ -9,7 +9,7 @@ class Debug:
     """ Generalized logging class for EDMC that adapts the log level based on whether we're in dev mode or not. """
     logger: logging.Logger
 
-    def __init__(self, plugin_dir, dev_mode: bool = False) -> None:
+    def __init__(self, plugin_dir, dev_mode:bool = False) -> None:
         # A Logger is used per 'found' plugin to make it easy to include the plugin's
         # folder name in the logging output format.
         Debug.logger = logging.getLogger(f'{appname}.{path.basename(plugin_dir)}')

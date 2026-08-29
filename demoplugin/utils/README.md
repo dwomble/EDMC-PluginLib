@@ -2,25 +2,63 @@
 
 A Library of useful utilities for EDMC plugins.
 
-## Updater
+## Updater and Notifier
 
 A class to check if a new release of the plugin is available, download the zip asset, and install it on exit.
 
 ```python
 from utils.updater import Updater
 
-def plugin_start3(plugin_dir) -> None:
+def plugin_start3(plugin_dir) -> str:
     updater = Updater(plugin_dir)
     updater.check_for_update(plugin_version, plugin_name)
+    return NAME
 
 def plugin_stop() -> None:
     if updater.install_update:
         updater.install()
 ```
 
+A class to display a notice in the UI.
+
+```python
+from utils.updater import Notices
+
+def plugin_start3(plugin_dir):
+    plugin.notices = Notices(GH_OWNER, GH_PROJECT, GH_MAIN)
+    plugin.notices.check_for_notices()
+
+    return PLUGIN_NAME
+
+def show_notice() -> None:
+    global notice
+    if not plugin.notices or not plugin.notices.pending_notice:
+        return
+    notice:th.RichText = th.RichText(plugin.frame, width=60, height=2, markdown=Context.notices.pending_notice)
+    notice.bind("<Button-1>", partial(self.dismiss_notice))
+    notice.grid(row=0, column=0, sticky=tk.W)
+
+def dismiss_notice(tkEvent = None) -> None:
+    plugin.notices.dismiss_notice()
+    notice.destroy()
+    plugin.frame.update_idletasks()
+```
+
+### Example NOTICES.md
+
+```markdown
+# Notices
+
+## 2
+A **second** notification.
+
+## 1
+A **first** notification.
+```
+
 ## Debug
 
-A class for EDMC logging that automatically registers a debug handler and adjusts the debug level dependent on whether the plugin is in development mode and a decorator to automatically catch and log runtime errors.
+A class for EDMC logging that automatically registers a debug handler and adjusts the debug level dependent on whether the plugin is in development mode. Also a decorator to automatically catch and log runtime errors that may not get caught by EDMC or caught too late by EDMC.
 
 ```python
 from utils.debug import Debug, catch_exceptions
@@ -38,11 +76,11 @@ my_func()
 
 These are suitable for the main EDMC window and will automatically adapt to regular, dark or transparent modes. Just like EDMC they use ttk objects where possible for light mode and tk equivalents for dark and transparent.
 
-Note they only support `grid` not `pack` layout
+Note they only support `grid` not `pack` layout and scrollbars are OS native so cannot be made to adjust to the dark or transparent theme.
 
 ### Standard tk
 
-Theme-aware versions of the following standard objects: TopLevel, Frame, LabelFrame, Label, Entry, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox.
+* Theme-aware versions of the following standard objects: Frame, LabelFrame, ScrollableFrame, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder
 
 ### th.ScrollableFrame
 
@@ -68,7 +106,7 @@ An themed tk.Entry class that supports placeholder text and a callback function 
 def callback(inp:str) -> list:
     """ Function called by Autocompleter """
     try:
-        results:requests.Response = requests.get(my_endpoint, params={'q': inp.strip()}, timeout=3)
+        results:requests.Response = session.get(my_endpoint, params={'q': inp.strip()}, timeout=3)
     except:
         return [inp]
     return json.loads(results.content)
