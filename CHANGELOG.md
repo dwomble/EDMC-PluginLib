@@ -40,6 +40,7 @@
 ### Bug Fixes
 
 * Fixed various placeholder and autocomplete issues with different EDMC theme modes
+* Fixed mode change bug with buttons
 
 ## v0.1.0 2026-04-15
 
