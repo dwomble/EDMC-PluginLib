@@ -121,7 +121,7 @@ class UI:
             return
 
         # Hide the panel
-        parent.after(10, lambda: self._toggle_panel(False))
+        parent.after(100, lambda: self._toggle_panel(False))
 
 
     def _toggle_panel(self, show:bool|None = None) -> None:

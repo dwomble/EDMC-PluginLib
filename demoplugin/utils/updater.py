@@ -38,12 +38,12 @@ class Updater():
     """
     Handle checking for, and installing, plugin updates.
 
-    Create the object with parameters plugin_dir, gh_owner, gh_project, gh_release_info.
+    Create the object with parameters plugin_dir, gh_owner, gh_project.
       gh_owner is the github owner/org, e.g. "coder"
       gh_project is the github project name, e.g. "my-plugin"
-      gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
     Call check_for_update(version) at plugin startup. It's asynchronous.
-    Call install() to install the update when you choose (commonly on shutdown).
+    Call install(preserve) to install the update when you choose (commonly on shutdown).
+      preserve is a list of directories that shouldn't be deleted.
     """
 
     def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str) -> None:
