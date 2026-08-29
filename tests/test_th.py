@@ -64,8 +64,8 @@ class Testth:
         sf.destroy()
 
     def test_scrollbar_hides(self, harness:TestHarness) -> None:
-        # A single line is ~22px (per test_scrollbar_appears_when_content_overflows: 10 lines
-        # ~220px), so maxheight must be generous enough to fit exactly one -- 20 legitimately
+        # A single line is ~22px (per test_scrollbar_appears: 10 lines ~220px),
+        # so maxheight must be generous enough to fit exactly one -- 20 legitimately
         # still needs a scrollbar for even one line.
         sf = ScrollableFrame(harness.parent, maxheight=100)
         for i in range(10):
@@ -115,8 +115,7 @@ class Testth:
         sf.destroy()
 
     def test_maxheight_setable(self, harness:TestHarness) -> None:
-        """ `maxheight` behaves like any other Tk option (e.g. borderwidth) -- settable via
-        configure()/config() at any time, not just at construction, and recomputes immediately. """
+        """ `maxheight` behaves like any other Tk option (e.g. borderwidth) """
         sf = ScrollableFrame(harness.parent, maxheight=200)
         _add_line(harness, sf)
         _add_line(harness, sf)
@@ -188,8 +187,6 @@ class TestPlainWidgets:
         assert str(rst.frame["background"]) == str(lbl["background"])
 
 class TestThemedPairWidgets:
-    """ Button/Checkbutton are light/dark pairs -- only one half should ever be gridded. """
-
     def test_button_grid(self, harness:TestHarness) -> None:
         btn = Button(harness.parent, text="Go")
         btn.grid()
@@ -204,12 +201,8 @@ class TestThemedPairWidgets:
         assert str(cb.obj["variable"]) == str(var) == str(cb.alt["variable"])
 
 class TestAutocompleterPopup:
-    """ show_list()'s popup must match the main window's own
-    "Always on top" state -- an overrideredirect popup doesn't
-    auto-restack above a topmost parent otherwise. """
-
     @pytest.mark.manual_only
-    def test_popup_matches_parent_topmost_state(self, harness:TestHarness, monkeypatch) -> None:
+    def test_popup_ontop(self, harness:TestHarness, monkeypatch) -> None:
         root:tk.Misc = harness.parent.winfo_toplevel()
         ac = Autocompleter(harness.parent, "placeholder", func=lambda s: ["Sol"])
         # Real focus assignment is unreliable headless -- show_list()'s
