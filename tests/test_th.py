@@ -194,11 +194,8 @@ class TestThemedPairWidgets:
         managers = {btn.obj.winfo_manager(), btn.alt.winfo_manager()}
         assert managers == {"grid", ""}
 
-    def test_grid_skips_duplicate_registration_with_unchanged_options(self, harness:TestHarness, monkeypatch) -> None:
-        """ theme.register_alternate() only ever appends -- repeated .grid() calls with the same
-        options (e.g. a hide/show toggle re-gridding at the same row/column) must not leak a
-        fresh, permanent duplicate into EDMC's own widgets_pair list every time. A genuine
-        options change must still register, since the theme-swap machinery needs the update. """
+    def test_grid_skips_duplicate_registration(self, harness:TestHarness, monkeypatch) -> None:
+        """ Repeated identical .grid() calls register only once. """
         calls:list = []
         monkeypatch.setattr(theme, 'register_alternate', lambda pair, gridopts: calls.append(gridopts))
 
@@ -210,11 +207,8 @@ class TestThemedPairWidgets:
         btn.grid(row=1, column=0) # genuinely different -- must register
         assert len(calls) == 2
 
-    def test_grid_places_the_dark_widget_in_dark_theme(self, harness:TestHarness) -> None:
-        """ Real EDMC has no 'dark_mode' config key at all (only the int 'theme': 0=default,
-        1=dark, 2=transparent) -- checking a nonexistent bool key always picked obj (light),
-        masked initially by EDMC's own theme.apply() correcting it via widgets_pair, but a
-        later hide+reshow re-picks obj directly with nothing left to correct it again. """
+    def test_grid_picks_dark_widget(self, harness:TestHarness) -> None:
+        """ Dark theme grids the dark widget, light theme the light one. """
         previous:int|None = config.get_int('theme')
         try:
             config.set('theme', 1) # dark
