@@ -27,6 +27,7 @@
 ### Changes
 
 * The updater now has a configurable re-check frequency limit
+* The updater cleans (backs-up) the plugin code before updating
 * Added richtext support to tooltips
 * Added mock get_bool and get_list config methods
 * Added mock EDMC-Hotkeys support
@@ -39,6 +40,7 @@
 ### Bug Fixes
 
 * Fixed various placeholder and autocomplete issues with different EDMC theme modes
+* Fixed mode change bug with buttons
 
 ## v0.1.0 2026-04-15
 

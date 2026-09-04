@@ -11,12 +11,12 @@ from utils.updater import Updater
 
 def plugin_start3(plugin_dir) -> str:
     updater = Updater(plugin_dir)
-    updater.check_for_update(plugin_version, plugin_name)
+    updater.check_for_update(plugin_version)
     return NAME
 
 def plugin_stop() -> None:
     if updater.install_update:
-        updater.install()
+        updater.install(["configdir", "datadir"])
 ```
 
 A class to display a notice in the UI.
