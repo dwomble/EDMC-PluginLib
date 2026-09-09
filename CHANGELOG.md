@@ -1,6 +1,12 @@
 # EDMC-PluginLib Changelog
 
-## v0.2.0 2026-??-??
+## v0.3.0 2026-??-??
+
+### Changes
+
+* Updated Github VirusTotal action to v2.
+
+## v0.2.0 2026-08-28
 
 ### New Features
 

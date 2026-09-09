@@ -55,14 +55,7 @@ class Base:
 
     def grid(self, *args, **kw) -> Any:
         """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them.
-
-        EDMC's theme.register_alternate() only ever appends -- it never dedupes or replaces an
-        existing entry for the same widget pair. Every repeated .grid() call with the same
-        options (e.g. a hide/show toggle re-gridding with unchanged row/column) would otherwise
-        leak another permanent duplicate into EDMC's own widgets_pair list, which its theme.apply()
-        re-processes (grid_remove() + re-grid()) on every future theme refresh -- unbounded,
-        wasteful churn on the same widgets for the rest of the session. Only register when the
-        options actually changed since last time. """
+        Only register when the options actually changed since last time. """
         if self.alt is None:
             return self.obj.grid(*args, **kw)
 
@@ -77,11 +70,7 @@ class Base:
             theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
             object.__setattr__(self, '_last_gridopts', gridopts)
 
-        # 'theme' (0=default, 1=dark, 2=transparent), not 'dark_mode' -- real EDMC's own
-        # theme.py has no 'dark_mode' config key at all, so that check always picked obj (light)
-        # here regardless of theme, until EDMC's own later theme.apply() pass corrected it via
-        # the widgets_pair registered above. A hide+reshow re-runs this before any apply() call
-        # follows, so the wrong (light) widget stuck around instead of getting corrected again.
+        # 'theme' (0=default, 1=dark, 2=transparent)
         return self.alt.grid(*args, **kw) if config.get_int('theme') != 0 else self.obj.grid(*args, **kw)
 
     def configure(self, cnf=None, **kw) -> None:
