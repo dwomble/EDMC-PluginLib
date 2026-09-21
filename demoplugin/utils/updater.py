@@ -38,18 +38,22 @@ class Updater():
     """
     Handle checking for, and installing, plugin updates.
 
-    Create the object with parameters plugin_dir, gh_owner, gh_project.
+    Create the object with parameters plugin_dir, gh_owner, gh_project, gh_release_info.
       gh_owner is the github owner/org, e.g. "coder"
       gh_project is the github project name, e.g. "my-plugin"
+      gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
     Call check_for_update(version) at plugin startup. It's asynchronous.
     Call install(preserve) to install the update when you choose (commonly on shutdown).
-      preserve is a list of directories that shouldn't be deleted.
+      'preserve' is a list of directories that shouldn't be deleted.
     """
 
-    def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str) -> None:
+    def __init__(self, plugin_dir:str, gh_owner:str, gh_project:str, gh_release_info:str = '') -> None:
         self.plugin_dir:str = plugin_dir
         self.gh_owner:str = gh_owner
         self.gh_project:str = gh_project
+        self.gh_release_info:str = gh_release_info
+        if self.gh_release_info == '':
+            self.gh_release_info = f'https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest'
 
         self.update_available:bool = False # Is there an update available?
         self.install_update:bool = False # Should it be installed?
@@ -120,10 +124,9 @@ class Updater():
     def get_release(self) -> bool:
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
-            url:str = f"https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest"
-            Debug.logger.debug(f"Requesting {url}")
+            Debug.logger.debug(f"Requesting {self.gh_release_info}")
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
+            r:requests.Response = session.get(self.gh_release_info, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)
@@ -188,12 +191,12 @@ class Updater():
 
 class Notices():
     """
-    Fetches NOTICES.md from the repo's default branch, tracking
-    which "## N" notice heading the user has dismissed.
+    Fetches NOTICES.md from the repo's default branch, tracking which "## N" notice heading the user has dismissed.
 
-    Call check_for_notices() at startup -- async and throttled
-    like Updater.check_for_update(). pending_notice holds the
-    current one to show; call dismiss_notice() once seen. """
+    Call check_for_notices() at startup (it's async and throttled).
+    pending_notice holds the current one to show
+    call dismiss_notice() once seen.
+    """
     def __init__(self, gh_owner:str, gh_project:str, gh_branch:str = 'main') -> None:
         self.gh_owner:str = gh_owner
         self.gh_project:str = gh_project
