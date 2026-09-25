@@ -4,7 +4,10 @@
 
 ### Changes
 
-* Updated Github VirusTotal action to v2.
+* Updated Github VirusTotal action to v2
+* Added th.Separator
+* Improved th.Button's function and tk compatibility
+* Added text property to th.Tooltip for better compatibility
 
 ## v0.2.0 2026-08-28
 

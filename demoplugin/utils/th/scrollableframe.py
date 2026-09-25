@@ -6,8 +6,12 @@ pixels; while content fits, the widget looks and behaves like a plain frame.
 """
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from theme import theme # type: ignore
+
+if TYPE_CHECKING:
+    from . import Frame
 
 class ScrollableFrame(tk.Frame):
     """
@@ -23,6 +27,7 @@ class ScrollableFrame(tk.Frame):
         self._last_height:int|None = None
         self._last_scrollregion:tuple|None = None
         self._last_item_width:int|None = None
+        self._themed_children:set = set()
 
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -36,7 +41,7 @@ class ScrollableFrame(tk.Frame):
         # Not gridded yet -- shown/hidden by _update_scrollbar_visibility() as content changes.
 
         from . import Frame # local import: avoids a hard circular import at module load time
-        self.interior:tk.Frame = Frame(self._canvas)
+        self.interior:'Frame' = Frame(self._canvas)
         theme.register(self.interior) # else stuck light forever -- canvas children aren't walked
         self._interior_id = self._canvas.create_window((0, 0), window=self.interior, anchor="nw")
 
@@ -52,14 +57,21 @@ class ScrollableFrame(tk.Frame):
         self._resize_pending = True
         self.after_idle(self._apply_resize)
 
+    def refresh(self) -> None:
+        """ Force a resize/scrollbar recompute -- call after grid()/grid_remove() since <Configure> may not fire """
+        self._apply_resize()
+
     def _apply_resize(self) -> None:
         self._resize_pending = False
         if not self._canvas.winfo_exists():
             return
 
         for child in self.interior.winfo_children():
+            if child in self._themed_children:
+                continue
             theme.update(child) # colors it if the theme is already known...
             theme.register(child) # ...and covers it for a later apply() if not
+            self._themed_children.add(child)
 
         bbox = self._canvas.bbox("all")
         # Compare against the value *we* last applied, not the widget's own read-back: under
@@ -76,8 +88,8 @@ class ScrollableFrame(tk.Frame):
         self._update_scrollbar_visibility(content_height)
 
     def _content_height(self) -> int:
-        """ Sum the children's own requested heights rather than trust `.interior.winfo_reqheight()` """
-        return sum(child.winfo_reqheight() for child in self.interior.winfo_children())
+        """ Sum only actively-managed children -- grid_remove()/pack_forget()'d rows must not count """
+        return sum(child.winfo_reqheight() for child in self.interior.winfo_children() if child.winfo_manager())
 
     def _on_canvas_configure(self, event:tk.Event) -> None:
         """ Keep the interior frame's width matched to the canvas's visible width. """
@@ -111,6 +123,7 @@ class ScrollableFrame(tk.Frame):
         self.interior.unbind("<Configure>")
         for child in self.interior.winfo_children():
             child.destroy()
+        self._themed_children.clear()
         self.interior.bind("<Configure>", self._on_interior_configure)
         self._on_interior_configure()
 
