@@ -38,7 +38,14 @@ class ScrollableFrame(tk.Frame):
 
         self._scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self._canvas.yview)
         self._canvas.configure(yscrollcommand=self._scrollbar.set)
-        # Not gridded yet -- shown/hidden by _update_scrollbar_visibility() as content changes.
+        self._scrollbar.update_idletasks()
+
+        # A same-width stand-in for the scrollbar's column so the canvas's width -- and anything a
+        # caller aligns against it, e.g. a separate header row -- never shifts when scrolling isn't needed
+        self._spacer = tk.Frame(self, width=self._scrollbar.winfo_reqwidth(), height=1)
+        self._spacer.grid_propagate(False)
+        self._spacer.grid(row=0, column=1, sticky="ns")
+        # _update_scrollbar_visibility() swaps this for _scrollbar (or back) as content changes.
 
         from . import Frame # local import: avoids a hard circular import at module load time
         self.interior:'Frame' = Frame(self._canvas)
@@ -60,6 +67,16 @@ class ScrollableFrame(tk.Frame):
     def refresh(self) -> None:
         """ Force a resize/scrollbar recompute -- call after grid()/grid_remove() since <Configure> may not fire """
         self._apply_resize()
+
+    @property
+    def scrollbar_visible(self) -> bool:
+        """ Whether the vertical scrollbar is currently shown, current as of the last refresh() """
+        return self._scrollbar_visible
+
+    @property
+    def scrollbar_width(self) -> int:
+        """ The scrollbar's width, whether or not it's currently shown -- for callers matching its layout """
+        return self._scrollbar.winfo_reqwidth()
 
     def _apply_resize(self) -> None:
         self._resize_pending = False
@@ -88,8 +105,17 @@ class ScrollableFrame(tk.Frame):
         self._update_scrollbar_visibility(content_height)
 
     def _content_height(self) -> int:
-        """ Sum only actively-managed children -- grid_remove()/pack_forget()'d rows must not count """
-        return sum(child.winfo_reqheight() for child in self.interior.winfo_children() if child.winfo_manager())
+        """ Sum managed children's heights -- grid cells sharing a row count once, not once each """
+        grid_rows:dict[int, int] = {}
+        packed_total:int = 0
+        for child in self.interior.winfo_children():
+            manager:str = child.winfo_manager()
+            if manager == 'grid' and isinstance(child, tk.Widget):
+                row:int = child.grid_info()['row']
+                grid_rows[row] = max(grid_rows.get(row, 0), child.winfo_reqheight())
+            elif manager:
+                packed_total += child.winfo_reqheight()
+        return packed_total + sum(grid_rows.values())
 
     def _on_canvas_configure(self, event:tk.Event) -> None:
         """ Keep the interior frame's width matched to the canvas's visible width. """
@@ -131,10 +157,12 @@ class ScrollableFrame(tk.Frame):
         needs_scroll:bool = self._maxheight is not None and content_height > self._maxheight
 
         if needs_scroll and not self._scrollbar_visible:
+            self._spacer.grid_forget()
             self._scrollbar.grid(row=0, column=1, sticky="ns")
             self._scrollbar_visible = True
         elif not needs_scroll and self._scrollbar_visible:
             self._scrollbar.grid_forget()
+            self._spacer.grid(row=0, column=1, sticky="ns")
             self._scrollbar_visible = False
 
         display_height:int = min(content_height, self._maxheight) if self._maxheight else content_height
