@@ -97,8 +97,9 @@ def plugin_stop():
 @catch_exceptions
 def plugin_app(parent:tk.Frame):
     """ Return a TK Frame for adding to the EDMC main window """
-    plugin.frame = tk.Frame(parent)
-    plugin.ui = UI(plugin.frame)
+    # An extra unweighted wrapper here would block EDMC's stretch from reaching self.frame's own weighted column
+    plugin.ui = UI(parent)
+    plugin.frame = plugin.ui.frame
 
     return plugin.frame
 

@@ -116,7 +116,7 @@ label:th.Autocompleter = th.Autocompleter(frame, "Placeholder", width=30, func=c
 
 ### th.Tooltip
 
-A popup tooltip for any th object.
+A rich-text (HTML or Markdown) capable popup tooltip for any th object.
 
 ```python
 th.Tooltip(my_label, "My tooltip string")
@@ -211,6 +211,8 @@ x == y
 
 ## Where to copy `utils/` into your plugin
 
-**Copy it under your plugin's own top-level package -- not into your plugin's root directory.** For example, if your plugin's own code lives under `myplugin/`, copy this library's `utils/` folder to `myplugin/utils/` (and import it as `from myplugin.utils.th import Frame`, etc.), rather than dropping a bare `utils/` folder next to `load.py`.
+EDMC plugins share a single namespace so you **must** copy it under your plugin's own top-level package or some other distinctive directory, **not** into your plugin's root directory.
 
-Why this matters: EDMC loads every installed plugin into the *same* Python process, adding each plugin's directory to a shared `sys.path`. If a user has two plugins using this library only the *first* one will ever be used. Nesting under your plugin's own (already-unique) package name avoids this.
+For example, if your plugin's own code lives under `plugins/myplugin/plugin/`, copy this library's `utils/` folder to `plugin/utils/` (and import it as `from plugin.utils.th import Frame`, etc.), rather than dropping a bare `utils/` folder into `plugins/myplugin/` next to `load.py`.
+
+The specifics: EDMC loads every installed plugin into the *same* Python process, adding each plugin's directory to a shared `sys.path`. If a user has two plugins using this library only the *first* one will ever be used. Nesting under your plugin's own (already-unique) package name avoids this.

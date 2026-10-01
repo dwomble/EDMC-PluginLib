@@ -17,9 +17,7 @@ Created as a platform to test and exercise the library functionality it also act
 
 A unit and regression testing tool for EDMC that mocks EDMC functionality enabling `pytest`, python debugger, and `pycov` test coverage analyses.
 
-* Development is much faster when you can use the python debugger; replay sequences of events; and run regression tests.
-* AI tools such as Claude Code are far more effective when they can write and run regression tests.
-* Debugging user issues is much easier when you can replay their journal in your environment to reproduce problems.
+You can use `pytest` without it to run many functions but this provides a mocked up EDMC environment so you can run realistic scenarios including replaying journal events.
 
 ![Debugging a plugin](https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f)
 ![Code test coverage](https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f)
@@ -30,6 +28,7 @@ A unit and regression testing tool for EDMC that mocks EDMC functionality enabli
 * Mock state handling
 * Mock EDMC config
 * Mock ED logging
+* Mock outfitting
 * Mock i10n translation
 * Mock CAPI event handling
 * Mock EDMC Overlay

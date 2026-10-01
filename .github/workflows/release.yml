@@ -56,9 +56,10 @@ jobs:
 
     - name: VirusTotal Scan
       # Will run a VirustTotal scan and add the results to the release notes. Requires a VT API key in the repository secrets.
-      uses: cssnr/virustotal-action@v1
+      uses: cssnr/virustotal-action@v2
       with:
         vt_api_key: ${{ secrets.VT_API_KEY }}
         file_globs: ${{ github.event.repository.name }}.zip
-        release_heading: '### Virus Scan'
+        release_heading: '### 🛡️ VirusTotal Scan Results'
         update_release: true
+        summary: true
