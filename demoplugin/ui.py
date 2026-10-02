@@ -138,6 +138,7 @@ class UI:
             self.pips.grid(row=1, column=2, padx=2, sticky=tk.W)
             self.badges.grid(row=1, column=3, padx=(2, 0), sticky=tk.W)
             self.panel.grid(row=2, column=0, sticky=tk.EW)
+            th.fit_height(self.frame)
             return
 
         self.mode.grid_forget()
@@ -145,6 +146,7 @@ class UI:
         self.pips.grid_forget()
         self.badges.grid_forget()
         self.panel.grid_forget()
+        th.fit_height(self.frame)
 
     def _toggle_glyph(self) -> str:
         return PANEL_SHOWN_GLYPH if self._panel_enabled else PANEL_HIDDEN_GLYPH

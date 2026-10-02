@@ -20,7 +20,7 @@ from theme import theme # type: ignore
 from config import config # type: ignore
 from harness import TestHarness, reset_plugin_modules
 
-from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Autocompleter
+from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Autocompleter, fit_height
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
@@ -253,6 +253,60 @@ class TestAutocompleterPopup:
         finally:
             root.attributes('-topmost', False)
             ac.destroy()
+
+class TestFitHeight:
+    def _window(self, harness:TestHarness, explicit:bool) -> tuple:
+        top = tk.Toplevel(harness.root)
+        frame = tk.Frame(top)
+        frame.grid()
+        rows = [tk.Label(frame, text=f"row {i}", width=20) for i in range(8)]
+        for i, row in enumerate(rows): row.grid(row=i)
+        top.update()
+        if explicit: top.geometry(f"{top.winfo_width()}x{top.winfo_height()}")
+        top.update()
+        return top, frame, rows
+
+    def test_shrinks_after_hide(self, harness:TestHarness) -> None:
+        top, frame, rows = self._window(harness, True)
+        width:int = top.winfo_width()
+        for row in rows[2:]: row.grid_remove()
+        fit_height(frame)
+        top.update()
+        assert top.winfo_height() == top.winfo_reqheight()
+        assert top.winfo_width() == width
+        top.destroy()
+
+    def test_grows_after_show(self, harness:TestHarness) -> None:
+        top, frame, rows = self._window(harness, True)
+        full:int = top.winfo_height()
+        for row in rows[2:]: row.grid_remove()
+        fit_height(frame)
+        top.update()
+        assert top.winfo_height() < full
+        for row in rows[2:]: row.grid()
+        fit_height(frame)
+        top.update()
+        assert top.winfo_height() == full
+        top.destroy()
+
+    def test_auto_size_stays_auto(self, harness:TestHarness) -> None:
+        top, frame, rows = self._window(harness, False)
+        for row in rows[2:]: row.grid_remove()
+        fit_height(frame)
+        for row in rows[2:]: row.grid()
+        top.update()
+        assert top.winfo_height() == top.winfo_reqheight()
+        top.destroy()
+
+    def test_unmapped_is_noop(self, harness:TestHarness) -> None:
+        top, frame, rows = self._window(harness, True)
+        top.withdraw()
+        top.update()
+        before:str = top.geometry()
+        for row in rows[2:]: row.grid_remove()
+        fit_height(frame)
+        assert top.geometry() == before
+        top.destroy()
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
