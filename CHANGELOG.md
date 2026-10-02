@@ -1,14 +1,19 @@
 # EDMC-PluginLib Changelog
 
-## v0.3.0 2026-??-??
+## v0.3.0 2026-10-01
+
+### New Features
+
+* Added th.Separator
+* Added a scrollable frame that grows with content upto `maxheight` and then displays a scrollbar
+* Added mock outfitting
 
 ### Changes
 
 * Updated Github VirusTotal action to v2
-* Added th.Separator
 * Improved th.Button's function and tk compatibility
 * Added text property to th.Tooltip for better compatibility
-* Added a scrollable frame that grows with content upto `maxheight` and then displays a scrollbar
+* Updated documentation
 
 ## v0.2.0 2026-08-28
 
