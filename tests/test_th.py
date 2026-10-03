@@ -20,7 +20,7 @@ from theme import theme # type: ignore
 from config import config # type: ignore
 from harness import TestHarness, reset_plugin_modules
 
-from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Autocompleter, fit_height
+from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Autocompleter, fit_window, Collapsible
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
@@ -254,7 +254,7 @@ class TestAutocompleterPopup:
             root.attributes('-topmost', False)
             ac.destroy()
 
-class TestFitHeight:
+class TestFitWindow:
     def _window(self, harness:TestHarness, explicit:bool) -> tuple:
         top = tk.Toplevel(harness.root)
         frame = tk.Frame(top)
@@ -266,33 +266,53 @@ class TestFitHeight:
         top.update()
         return top, frame, rows
 
-    def test_shrinks_after_hide(self, harness:TestHarness) -> None:
+    def test_hide(self, harness:TestHarness) -> None:
         top, frame, rows = self._window(harness, True)
         width:int = top.winfo_width()
         for row in rows[2:]: row.grid_remove()
-        fit_height(frame)
+        fit_window(frame)
         top.update()
         assert top.winfo_height() == top.winfo_reqheight()
         assert top.winfo_width() == width
         top.destroy()
 
-    def test_grows_after_show(self, harness:TestHarness) -> None:
+    def test_show(self, harness:TestHarness) -> None:
         top, frame, rows = self._window(harness, True)
         full:int = top.winfo_height()
         for row in rows[2:]: row.grid_remove()
-        fit_height(frame)
+        fit_window(frame)
         top.update()
         assert top.winfo_height() < full
         for row in rows[2:]: row.grid()
-        fit_height(frame)
+        fit_window(frame)
         top.update()
         assert top.winfo_height() == full
         top.destroy()
 
-    def test_auto_size_stays_auto(self, harness:TestHarness) -> None:
+    def test_grows_width(self, harness:TestHarness) -> None:
+        top, frame, rows = self._window(harness, True)
+        before:int = top.winfo_width()
+        tk.Label(frame, text="wide", width=60).grid(row=20)
+        fit_window(frame)
+        top.update()
+        assert top.winfo_width() == top.winfo_reqwidth() > before
+        top.destroy()
+
+    def test_keeps_width(self, harness:TestHarness) -> None:
+        top, frame, rows = self._window(harness, True)
+        wide:int = top.winfo_width() + 200
+        top.geometry(f"{wide}x{top.winfo_height()}")
+        top.update()
+        for row in rows[2:]: row.grid_remove()
+        fit_window(frame)
+        top.update()
+        assert top.winfo_width() == wide
+        top.destroy()
+
+    def test_auto_size(self, harness:TestHarness) -> None:
         top, frame, rows = self._window(harness, False)
         for row in rows[2:]: row.grid_remove()
-        fit_height(frame)
+        fit_window(frame)
         for row in rows[2:]: row.grid()
         top.update()
         assert top.winfo_height() == top.winfo_reqheight()
@@ -304,9 +324,59 @@ class TestFitHeight:
         top.update()
         before:str = top.geometry()
         for row in rows[2:]: row.grid_remove()
-        fit_height(frame)
+        fit_window(frame)
         assert top.geometry() == before
         top.destroy()
+
+class TestCollapsible:
+    def _view(self, harness:TestHarness, hidden:bool = False) -> tuple:
+        calls:list = []
+        view = Collapsible(harness.parent, hidden=hidden, on_toggle=calls.append)
+        harness.parent.grid()
+        return view, calls
+
+    def test_expanded(self, harness:TestHarness) -> None:
+        view, calls = self._view(harness)
+        assert view.expanded.winfo_manager() == 'grid'
+        assert view.collapsed.winfo_manager() == ''
+        assert calls == []
+
+    def test_hidden(self, harness:TestHarness) -> None:
+        view, _ = self._view(harness, True)
+        assert view.expanded.winfo_manager() == ''
+        assert view.collapsed.winfo_manager() == 'grid'
+
+    def test_toggle(self, harness:TestHarness) -> None:
+        view, calls = self._view(harness)
+        view.toggle()
+        assert (view.expanded.winfo_manager(), view.collapsed.winfo_manager()) == ('', 'grid')
+        view.toggle()
+        assert (view.expanded.winfo_manager(), view.collapsed.winfo_manager()) == ('grid', '')
+        assert calls == [True, False]
+
+    def test_set_state(self, harness:TestHarness) -> None:
+        view, calls = self._view(harness)
+        view.toggle(False)
+        view.toggle(True)
+        assert calls == [False, True]
+        assert view.hidden is True
+
+    def test_buttons(self, harness:TestHarness) -> None:
+        view, calls = self._view(harness)
+        view.hide_button(view.expanded).obj.invoke()
+        view.show_button(view.collapsed).obj.invoke()
+        assert calls == [True, False]
+
+    def test_button_glyphs(self, harness:TestHarness) -> None:
+        view, _ = self._view(harness)
+        assert view.hide_button(view.expanded)['text'] != view.show_button(view.collapsed)['text']
+
+    def test_toggle_before_fit(self, harness:TestHarness, monkeypatch) -> None:
+        order:list = []
+        monkeypatch.setattr('demoplugin.utils.th.collapsible.fit_window', lambda w: order.append('fit'))
+        view = Collapsible(harness.parent, on_toggle=lambda h: order.append('toggle'))
+        view.toggle()
+        assert order == ['toggle', 'fit']
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

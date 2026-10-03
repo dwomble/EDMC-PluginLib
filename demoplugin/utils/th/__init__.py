@@ -17,7 +17,7 @@ from ..debug import Debug
 
 __all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Entry", "Button", "Radiobutton",
            "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox", "Separator", "ScrollableFrame", "Tooltip", "Autocompleter",
-           "Placeholder", "resolve", "fit_height"]
+           "Placeholder", "resolve", "fit_window", "Collapsible"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
@@ -38,13 +38,14 @@ def resolve(widget:Any) -> Any:
     """ Resolve the actual base object for a tk nametowidget() lookup. """
     return getattr(widget, 'themed', widget)
 
-def fit_height(widget:tk.Misc) -> None:
-    """ Refit the toplevel's height to its contents, keeping its width """
+def fit_window(widget:tk.Misc) -> None:
+    """ Refit the toplevel to its contents: height always, width only when it must grow """
     top:tk.Tk|tk.Toplevel = widget.winfo_toplevel()
     top.update_idletasks()
-    if not top.winfo_ismapped() or top.winfo_height() == top.winfo_reqheight(): return
+    width:int = max(top.winfo_width(), top.winfo_reqwidth())
+    if not top.winfo_ismapped() or (top.winfo_width(), top.winfo_height()) == (width, top.winfo_reqheight()): return
 
-    top.geometry(f"{top.winfo_width()}x{top.winfo_reqheight()}")
+    top.geometry(f"{width}x{top.winfo_reqheight()}")
 
 """ A set of UI objects to handle themed widgets for dealing with EDMC dark mode """
 class Base:
@@ -444,6 +445,7 @@ class Spinbox(PlaceholderMixin, Base):
 
         self.init_placeholder(master, placeholder, menu, placeholder_color, error_color)
 
-# Imported last: scrollableframe.py does `from . import Frame`, which needs Frame already
-# defined on this module before it runs.
+# Imported last: scrollableframe.py and collapsible.py do `from . import Frame`, which needs Frame
+# (and Button, fit_window) already defined on this module before they run.
 from .scrollableframe import ScrollableFrame
+from .collapsible import Collapsible

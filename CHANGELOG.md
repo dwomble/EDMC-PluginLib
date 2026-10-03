@@ -1,5 +1,10 @@
 # EDMC-PluginLib Changelog
 
+## 0.4.0 yyyy-mm-dd
+
+* Added th.Collapsible a class to manage a collapsed and expanded view for a plugin
+* Added th.fit_window to refit EDMC's main window to a plugin's content when its size changes, e.g. on collapse or expand
+
 ## v0.3.0 2026-10-01
 
 ### New Features
