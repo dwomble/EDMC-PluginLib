@@ -2,9 +2,12 @@
 
 ## 0.4.0 yyyy-mm-dd
 
+### Changes
+
 * Added th.Collapsible a class to manage a collapsed and expanded view for a plugin
 * Added th.fit_window to refit EDMC's main window to a plugin's content when its size changes, e.g. on collapse or expand
 * The updater no longer checks for updates when the plugin folder is a git checkout
+* Improved the test harness setup and teardown to better handle background threads
 
 ## v0.3.0 2026-10-01
 
