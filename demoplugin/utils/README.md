@@ -80,15 +80,45 @@ Note they only support `grid` not `pack` layout and scrollbars are OS native so 
 
 ### Standard tk
 
-* Theme-aware versions of the following standard objects: Frame, LabelFrame, ScrollableFrame, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder
+* Theme-aware versions of the following standard objects: Frame, LabelFrame, ScrollableFrame, Collapsible, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder
 
 ### th.ScrollableFrame
 
 A themed frame whose `.interior` scrolls vertically once its content exceeds `maxheight`, hiding the scrollbar entirely while content fits. Use `.clear()` to replace all of `.interior`'s content in one shot rather than destroying its children individually.
 
+### th.Collapsible
+
+An easy to use expand/collapse (hide/show, activate/deactivate). It creates two user-configurable frames (`.expanded` and `.collapsed`) and swaps them with `.toggle()`. When the view is changed it automatically refits the EDMC window to the new height/width.
+
+`hide_button` and `show_button` return pre-wired buttons that you grid wherever suits each layout.
+
+An optional `on_toggle` callback is called after the swap, e.g. to save the state
+
+```python
+def save_state(hidden:bool) -> None:
+    config.set("MyPlugin-Visibility", hidden)
+
+view:th.Collapsible = th.Collapsible(frame, hidden=config.get_bool("MyPlugin-Visibility"), on_toggle=save_state)
+
+th.Label(view.expanded, text="Main Frame").grid(row=0, column=0, sticky=tk.W)
+view.hide_button(view.expanded, tooltip="Hide").grid(row=0, column=1, sticky=tk.E)
+
+th.Label(view.collapsed, text="Collapsed Frame").grid(row=0, column=0, sticky=tk.W)
+view.show_button(view.collapsed, tooltip="Show").grid(row=0, column=1, sticky=tk.E)
+```
+
+#### th.fit_window()
+
+If your plugin's window changes size EDMC's main window may not adapt. `th.fit_window(widget)` refits the window to its content. `th.Collapsible` calls this for you, but call it yourself after any other size changes.
+
+```python
+my_frame.grid_forget()
+th.fit_window(plugin_frame)
+```
+
 ### th.Placeholder
 
-An themed tk.Entry class that includes a placeholder value and popup menu.
+A themed tk.Entry class that includes a placeholder value and popup menu.
 
 ```python
 mymenu:dict = {
@@ -100,7 +130,7 @@ my_field:th.Placeholder = th.Placeholder(frame, "Placeholder text", menu=mymenu)
 
 ### th.Autocompleter
 
-An themed tk.Entry class that supports placeholder text and a callback function to provide autocomplete functionality.
+A themed tk.Entry class that supports placeholder text and a callback function to provide autocomplete functionality.
 
 ```python
 def callback(inp:str) -> list:
