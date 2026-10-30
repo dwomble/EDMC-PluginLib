@@ -84,14 +84,6 @@ class UI:
         title:th.Label = th.Label(expanded, text="PluginLib Demo")
         title.grid(row=row, column=0, columnspan=2, sticky=tk.W)
 
-        self.slot:th.PluginSlot = th.PluginSlot(parent, "demo_slot")
-        arrows:th.Frame = th.Frame(expanded)
-        arrows.grid(row=row, column=2, sticky=tk.E)
-        for col, (text, step, tip) in enumerate((("▲", -1, "Move panel up"), ("▼", 1, "Move panel down"))):
-            btn:th.Button = th.Button(arrows, text=text, width=2, command=lambda s=step: self.slot.move(s))
-            th.Tooltip(btn, tip)
-            btn.grid(row=0, column=col)
-
         self.hide_button:th.Button = self.view.hide_button(expanded, tooltip="Hide panel")
         self.hide_button.grid(row=row, column=3, sticky=tk.E)
 
@@ -99,8 +91,16 @@ class UI:
         fnt.configure(weight="bold")
         title.configure(font=fnt)
         th.Label(collapsed, text="PluginLib Demo", font=fnt).grid(row=0, column=0, sticky=tk.W)
+
+        self.slot:th.PluginSlot = th.PluginSlot(parent, "demo_slot")
+        arrows:th.Frame = th.Frame(collapsed)
+        arrows.grid(row=row, column=1, sticky=tk.E)
+        for col, (text, step, tip) in enumerate((("▲", -1, "Move panel up"), ("▼", 1, "Move panel down"))):
+            btn:th.Button = th.Button(arrows, text=text, width=3, command=lambda s=step: self.slot.move(s))
+            th.Tooltip(btn, tip)
+            btn.grid(row=0, column=col)
         self.show_button:th.Button = self.view.show_button(collapsed, tooltip="Show panel")
-        self.show_button.grid(row=0, column=1, sticky=tk.E)
+        self.show_button.grid(row=0, column=2, sticky=tk.E)
 
         # Dashboard status row: mode, pips, badges
         row += 1
