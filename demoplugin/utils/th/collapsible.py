@@ -14,12 +14,13 @@ GLYPH_SHOW:str = "\U0001F441" # eye
 
 class Collapsible:
     """ Swaps between an expanded and a collapsed view of a plugin, refitting the window """
-    def __init__(self, parent:tk.Widget, movable:bool = False, on_toggle:Callable[[bool], None]|None = None) -> None:
+    def __init__(self, parent:tk.Widget, hidden:bool = False, movable:bool = False,
+                 on_toggle:Callable[[bool], None]|None = None) -> None:
         here:Path = Path(__file__).resolve()
         folder:str = next((p.name for p in here.parents if (p / "load.py").exists()), here.parents[1].name)
         self.key:str = f"th_{folder}"
 
-        self.hidden:bool = config.get_bool(f"{self.key}_hidden", default=False)
+        self.hidden:bool = config.get_bool(f"{self.key}_hidden", default=hidden)
         self._on_toggle:Callable[[bool], None]|None = on_toggle
         self.expanded:Frame = Frame(parent)
         self.collapsed:Frame = Frame(parent)
@@ -38,10 +39,12 @@ class Collapsible:
     def button(self, name:str, text:str|None = None, tooltip:str|None = None, **grid) -> Button:
         """ Change a default button's text, tooltip or grid placement """
         btn, tip = self._buttons[name]
-        if text is not None: btn.configure(text=text)
+        if text is not None: btn.configure(text=text, width=0) # natural width; the default 3 only suits a glyph
         if tooltip is not None: tip.text = tooltip
         # Full options via grid(), not grid_configure(), so the theme's alternate widget is re-registered too
         if grid: btn.grid(**{**(getattr(btn, '_last_gridopts', None) or {}), **grid})
+        # Gridded in_ a container created later, the button would be stacked beneath it and hidden
+        if 'in_' in grid: btn.lift()
         return btn
 
     def _add(self, name:str, master:Frame, text:str, tooltip:str, command:Callable, column:int, sticky:str) -> None:

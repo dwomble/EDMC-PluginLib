@@ -374,6 +374,11 @@ class TestCollapsible:
         assert calls == [False, True]
         assert view.hidden is True
 
+    def test_default_hidden(self, harness:TestHarness) -> None:
+        assert Collapsible(harness.parent, hidden=True).hidden is True
+        _cfg().set(f"{_VIEW_KEY}_hidden", False)
+        assert Collapsible(harness.parent, hidden=True).hidden is False
+
     def test_saves_hidden(self, harness:TestHarness) -> None:
         view, _ = self._view(harness)
         view.toggle()
@@ -404,6 +409,7 @@ class TestCollapsible:
         btn = view.button("hide", text="X", tooltip="Close", row=1, column=4)
         assert btn is view.button("hide")
         assert btn['text'] == "X"
+        assert btn['width'] == 0
         assert view._buttons["hide"][1].text == "Close"
         info:dict = btn.grid_info()
         assert (info['row'], info['column'], info['sticky']) == (1, 4, 'ne')
@@ -411,6 +417,12 @@ class TestCollapsible:
         view.button("hide", tooltip="Shut")
         assert btn['text'] == "X"
         assert btn.grid_info()['column'] == 4
+
+    def test_in_raises_button(self, harness:TestHarness) -> None:
+        view, _ = self._view(harness)
+        later:tk.Frame = tk.Frame(view.expanded)
+        btn = view.button("hide", in_=later, row=0, column=0)
+        assert view.expanded.winfo_children()[-2:] == [btn.obj, btn.alt]
 
     def test_movable(self, harness:TestHarness) -> None:
         box, _ = _edmc_box(harness, [1, 2, 3], set())
