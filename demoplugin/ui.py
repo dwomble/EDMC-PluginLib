@@ -5,14 +5,12 @@ from datetime import datetime, timezone
 import tkinter as tk
 from tkinter import font
 
-from config import config # type: ignore
 import edmc_data as ed # type: ignore
 
 import demoplugin.utils.th as th
 
 MAX_HEIGHT:int = 100 # Pixels
 BADGE_COLOR:str = "orange" # reads well in both light and dark theme
-PANEL_ENABLED:str = f"PluginLib-PanelEnabled"
 
 JOURNAL_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 DISP_FORMAT = "%m-%d %H:%M:%S"
@@ -70,8 +68,7 @@ class UI:
         self.frame.grid(row=0, column=0, sticky=tk.NSEW)
         self.frame.columnconfigure(0, weight=1)
 
-        self.view:th.Collapsible = th.Collapsible(self.frame, hidden=not config.get_bool(PANEL_ENABLED, default=True),
-                                                  on_toggle=self._toggle)
+        self.view:th.Collapsible = th.Collapsible(self.frame, movable=True)
         expanded:th.Frame = self.view.expanded
         collapsed:th.Frame = self.view.collapsed
         expanded.columnconfigure(0, weight=1)
@@ -83,24 +80,12 @@ class UI:
         row:int = 0
         title:th.Label = th.Label(expanded, text="PluginLib Demo")
         title.grid(row=row, column=0, columnspan=2, sticky=tk.W)
-
-        self.hide_button:th.Button = self.view.hide_button(expanded, tooltip="Hide panel")
-        self.hide_button.grid(row=row, column=3, sticky=tk.E)
+        self.view.button("hide", column=3) # line up with the badges column rather than the default far right
 
         fnt:font.Font = font.Font(font=title.cget("font"))
         fnt.configure(weight="bold")
         title.configure(font=fnt)
         th.Label(collapsed, text="PluginLib Demo", font=fnt).grid(row=0, column=0, sticky=tk.W)
-
-        self.slot:th.PluginSlot = th.PluginSlot(parent, "demo_slot")
-        arrows:th.Frame = th.Frame(collapsed)
-        arrows.grid(row=row, column=1, sticky=tk.E)
-        for col, (text, step, tip) in enumerate((("▲", -1, "Move panel up"), ("▼", 1, "Move panel down"))):
-            btn:th.Button = th.Button(arrows, text=text, width=3, command=lambda s=step: self.slot.move(s))
-            th.Tooltip(btn, tip)
-            btn.grid(row=0, column=col)
-        self.show_button:th.Button = self.view.show_button(collapsed, tooltip="Show panel")
-        self.show_button.grid(row=0, column=2, sticky=tk.E)
 
         # Dashboard status row: mode, pips, badges
         row += 1
@@ -126,10 +111,6 @@ class UI:
         # Content of the scrollable frame
         self.content:th.Text = th.Text(self.panel.interior, wrap=tk.WORD)
         self.content.grid(row=0, column=0)
-
-    def _toggle(self, hidden:bool) -> None:
-        """ Persist the state; collection keeps going either way. """
-        config.set(PANEL_ENABLED, not hidden)
 
     def add_entry(self, event:dict) -> None:
         """ Add a new entry to the scrollable frame. """

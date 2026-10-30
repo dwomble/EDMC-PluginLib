@@ -13,6 +13,7 @@ how many times reset_instance() runs, so a normal per-test reset+recreate here i
 """
 import random
 import sys
+from pathlib import Path
 import pytest
 import tkinter as tk
 from tkinter import ttk
@@ -330,15 +331,25 @@ class TestFitWindow:
         assert top.geometry() == before
         top.destroy()
 
+# th sits inside the repo, so Collapsible's key comes from the repo folder that holds load.py
+_VIEW_KEY:str = f"th_{Path(__file__).resolve().parents[1].name}"
+
 class TestCollapsible:
-    def _view(self, harness:TestHarness, hidden:bool = False) -> tuple:
+    @pytest.fixture(autouse=True)
+    def _clear_keys(self) -> None:
+        data:dict = _cfg().data
+        for k in [k for k in data if k.startswith(_VIEW_KEY)]: del data[k]
+
+    def _view(self, harness:TestHarness, hidden:bool = False, movable:bool = False, parent:Any = None) -> tuple:
         calls:list = []
-        view = Collapsible(harness.parent, hidden=hidden, on_toggle=calls.append)
+        if hidden: _cfg().set(f"{_VIEW_KEY}_hidden", True)
+        view = Collapsible(parent or harness.parent, movable=movable, on_toggle=calls.append)
         harness.parent.grid()
         return view, calls
 
     def test_expanded(self, harness:TestHarness) -> None:
         view, calls = self._view(harness)
+        assert view.key == _VIEW_KEY
         assert view.expanded.winfo_manager() == 'grid'
         assert view.collapsed.winfo_manager() == ''
         assert calls == []
@@ -363,15 +374,57 @@ class TestCollapsible:
         assert calls == [False, True]
         assert view.hidden is True
 
-    def test_buttons(self, harness:TestHarness) -> None:
+    def test_saves_hidden(self, harness:TestHarness) -> None:
+        view, _ = self._view(harness)
+        view.toggle()
+        assert _cfg().get_bool(f"{_VIEW_KEY}_hidden") is True
+
+        again = Collapsible(harness.parent)
+        assert again.hidden is True
+        assert again.collapsed.winfo_manager() == 'grid'
+
+    def test_default_buttons(self, harness:TestHarness) -> None:
+        view, _ = self._view(harness)
+        hide, show = view.button("hide"), view.button("show")
+        assert (hide.master, show.master) == (view.expanded, view.collapsed)
+        assert (hide.grid_info()['row'], hide.grid_info()['column']) == (0, 99)
+        assert (show.grid_info()['row'], show.grid_info()['column']) == (0, 99)
+        assert hide['text'] != show['text']
+        assert view._buttons["hide"][1].text == "Hide panel"
+        with pytest.raises(KeyError): view.button("up")
+
+    def test_buttons_toggle(self, harness:TestHarness) -> None:
         view, calls = self._view(harness)
-        view.hide_button(view.expanded).obj.invoke()
-        view.show_button(view.collapsed).obj.invoke()
+        view.button("hide").obj.invoke()
+        view.button("show").obj.invoke()
         assert calls == [True, False]
 
-    def test_button_glyphs(self, harness:TestHarness) -> None:
+    def test_button_customise(self, harness:TestHarness) -> None:
         view, _ = self._view(harness)
-        assert view.hide_button(view.expanded)['text'] != view.show_button(view.collapsed)['text']
+        btn = view.button("hide", text="X", tooltip="Close", row=1, column=4)
+        assert btn is view.button("hide")
+        assert btn['text'] == "X"
+        assert view._buttons["hide"][1].text == "Close"
+        info:dict = btn.grid_info()
+        assert (info['row'], info['column'], info['sticky']) == (1, 4, 'ne')
+
+        view.button("hide", tooltip="Shut")
+        assert btn['text'] == "X"
+        assert btn.grid_info()['column'] == 4
+
+    def test_movable(self, harness:TestHarness) -> None:
+        box, _ = _edmc_box(harness, [1, 2, 3], set())
+        view, _ = self._view(harness, movable=True, parent=box.nametowidget("plugin_2"))
+        up, down = view.button("up"), view.button("down")
+        assert (up.master, down.master) == (view.collapsed, view.collapsed)
+        assert (up.grid_info()['column'], down.grid_info()['column']) == (97, 98)
+
+        up.obj.invoke()
+        assert _order(box) == [2, 1, 3]
+        assert _cfg().get_int(f"{_VIEW_KEY}_slot") == 0
+        down.obj.invoke()
+        down.obj.invoke()
+        assert _order(box) == [1, 3, 2]
 
     def test_toggle_before_fit(self, harness:TestHarness, monkeypatch) -> None:
         order:list = []

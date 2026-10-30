@@ -15,7 +15,7 @@ from edmc_data import ( # type: ignore
 
 from harness import TestHarness, reset_plugin_modules
 from config import config # type: ignore
-from demoplugin.ui import _MODES, _BADGES, PANEL_ENABLED
+from demoplugin.ui import _MODES, _BADGES
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
@@ -146,12 +146,13 @@ class TestPanelToggle:
     def test_toggle_persists_config(self, harness:TestHarness) -> None:
         from load import plugin
         assert plugin.ui is not None
+        key:str = f"{plugin.ui.view.key}_hidden"
         plugin.ui.view.toggle()
         try:
-            assert config.get_bool(PANEL_ENABLED) is False
+            assert config.get_bool(key) is True
         finally:
             plugin.ui.view.toggle()
-        assert config.get_bool(PANEL_ENABLED) is True
+        assert config.get_bool(key) is False
 
     def test_dashboard_updates_while_collapsed(self, harness:TestHarness) -> None:
         from load import plugin
