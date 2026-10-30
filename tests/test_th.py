@@ -11,16 +11,18 @@ no ScrollableFrame logic involved. TestHarness works around this at the source (
 harness.py's `_shared_root`): one root is kept alive for the whole test process regardless of
 how many times reset_instance() runs, so a normal per-test reset+recreate here is safe.
 """
+import random
+import sys
 import pytest
 import tkinter as tk
 from tkinter import ttk
-from typing import Generator
+from typing import Any, Generator
 
 from theme import theme # type: ignore
 from config import config # type: ignore
 from harness import TestHarness, reset_plugin_modules
 
-from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Autocompleter, fit_window, Collapsible
+from demoplugin.utils.th import ScrollableFrame, Frame, Label, TopLevel, Button, Checkbutton, Text, RichText, RichScrolledText, Autocompleter, fit_window, Collapsible, PluginSlot
 
 @pytest.fixture
 def harness() -> Generator[TestHarness, None, None]:
@@ -380,3 +382,119 @@ class TestCollapsible:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
+
+def _cfg() -> Any:
+    """ The config object PluginSlot actually reads and writes. """
+    return sys.modules[PluginSlot.__module__].config
+
+def _edmc_box(harness:TestHarness, idxs:list, th:set, keys:dict|None = None) -> tuple:
+    """ Lay out plugin rows like EDMC's _config_plugins, creating PluginSlots as each plugin_app would. """
+    box:tk.Frame = tk.Frame(harness.parent)
+    for row, text in enumerate(("cmdr", "ship", "system"), start=1):
+        tk.Label(box, text=text).grid(row=row, column=0)
+    row = box.grid_size()[1]
+
+    slots:dict = {}
+    for idx in idxs:
+        tk.Frame(box, name=f"plugin_hr_{idx}").grid(row=row, columnspan=2)
+        frame:tk.Frame = tk.Frame(box, name=f"plugin_{idx}")
+        frame.grid(row=row + 1, columnspan=2)
+        row += 2
+        if idx in th: slots[idx] = PluginSlot(tk.Label(frame), (keys or {}).get(idx, f"slot_{idx}"))
+
+    tk.Button(box, name="update_button").grid(row=row, columnspan=2)
+    return box, slots
+
+def _order(box:tk.Misc) -> list:
+    """ Plugin idxs in display order, checking each separator sits directly above its frame. """
+    frames:list = [w for w in box.winfo_children() if w.winfo_name().startswith("plugin_") and "hr" not in w.winfo_name()]
+    frames.sort(key=lambda w: int(w.grid_info()['row']))
+    for f in frames:
+        sep:Any = box.nametowidget(f.winfo_name().replace("plugin_", "plugin_hr_"))
+        assert int(sep.grid_info()['row']) == int(f.grid_info()['row']) - 1
+    return [int(f.winfo_name()[7:]) for f in frames]
+
+class TestPluginSlot:
+    @pytest.fixture(autouse=True)
+    def _clear_slots(self) -> None:
+        data:dict = _cfg().data
+        for k in [k for k in data if k.startswith(("slot_", "dup_"))]: del data[k]
+
+    def test_move_swaps_rows(self, harness:TestHarness) -> None:
+        box, slots = _edmc_box(harness, [1, 2, 4, 5], {4})
+        _pump(harness)
+        fixed:dict = {w: w.grid_info()['row'] for w in box.winfo_children() if not w.winfo_name().startswith("plugin_")}
+
+        assert slots[4].move(-1) is True
+        assert _order(box) == [1, 4, 2, 5]
+        assert _cfg().get_int("slot_4") == 1
+        assert {w: w.grid_info()['row'] for w in fixed} == fixed
+
+        assert slots[4].move(2) is True
+        assert _order(box) == [1, 2, 5, 4]
+        assert _cfg().get_int("slot_4") == 3
+
+    def test_neighbour_saves_slot(self, harness:TestHarness) -> None:
+        box, slots = _edmc_box(harness, [1, 2, 3], {1, 2})
+        _pump(harness)
+
+        slots[1].move(1)
+        _pump(harness)
+        assert _order(box) == [2, 1, 3]
+        assert (_cfg().get_int("slot_1"), _cfg().get_int("slot_2")) == (1, 0)
+
+    def test_boundaries(self, harness:TestHarness) -> None:
+        box, slots = _edmc_box(harness, [1, 2, 3], {1, 3})
+        _pump(harness)
+
+        assert slots[1].move(-1) is False
+        assert slots[3].move(1) is False
+        assert _order(box) == [1, 2, 3]
+        assert _cfg().get_int("slot_1") is None
+
+        assert slots[1].move(5) is True
+        assert _order(box) == [2, 3, 1]
+
+    def test_outside_edmc_inert(self, harness:TestHarness) -> None:
+        slot = PluginSlot(tk.Label(harness.parent), "slot_x")
+        _pump(harness)
+        assert slot.move(1) is False
+        assert _cfg().get_int("slot_x") is None
+
+    @pytest.mark.parametrize("th", [{1, 2, 3, 4}, {1, 2, 3, 4, 5, 6}, {2, 5}, {1, 3, 6}, {2, 3, 4}])
+    @pytest.mark.parametrize("seed", range(6))
+    def test_restore_round_trip(self, harness:TestHarness, th:set, seed:int) -> None:
+        idxs:list = [1, 2, 3, 4, 5, 6]
+        box, slots = _edmc_box(harness, idxs, th)
+        _pump(harness)
+
+        rnd = random.Random(seed)
+        for _ in range(12):
+            slots[rnd.choice(sorted(th))].move(rnd.choice([-2, -1, 1, 2]))
+            _pump(harness)
+        saved:list = _order(box)
+        stored:dict = {i: _cfg().get_int(f"slot_{i}") for i in th}
+        box.destroy()
+
+        box, _ = _edmc_box(harness, idxs, th)
+        _pump(harness)
+        assert _order(box) == saved
+        assert {i: _cfg().get_int(f"slot_{i}") for i in th} == stored
+
+    def test_restore_shift_failure(self, harness:TestHarness) -> None:
+        """ An arrangement that restoring by shifting in load order rebuilds wrongly. """
+        for slot, idx in enumerate([4, 3, 1, 2]): _cfg().set(f"slot_{idx}", slot)
+        box, _ = _edmc_box(harness, [1, 2, 3, 4], {1, 2, 3, 4})
+        _pump(harness)
+        assert _order(box) == [4, 3, 1, 2]
+
+    def test_restore_edge_cases(self, harness:TestHarness) -> None:
+        _cfg().set("slot_1", 9)
+        _cfg().set("dup_a", 0)
+        _cfg().set("dup_b", 0)
+        box, _ = _edmc_box(harness, [1, 2, 3], {1})
+        other, _ = _edmc_box(harness, [1, 2, 3], {1, 2}, {1: "dup_a", 2: "dup_b"})
+        _pump(harness)
+
+        assert _order(box) == [2, 3, 1]
+        assert sorted(_order(other)) == [1, 2, 3]
