@@ -396,11 +396,13 @@ def _edmc_box(harness:TestHarness, idxs:list, th:set, keys:dict|None = None) -> 
 
     slots:dict = {}
     for idx in idxs:
-        tk.Frame(box, name=f"plugin_hr_{idx}").grid(row=row, columnspan=2)
         frame:tk.Frame = tk.Frame(box, name=f"plugin_{idx}")
+        if idx in th: slots[idx] = PluginSlot(tk.Label(frame), (keys or {}).get(idx, f"slot_{idx}"))
+        # EDMC grids the frame after plugin_app, which may flush idle tasks (e.g. ScrollableFrame)
+        harness._pump_ui(timeout_s=0)
+        tk.Frame(box, name=f"plugin_hr_{idx}").grid(row=row, columnspan=2)
         frame.grid(row=row + 1, columnspan=2)
         row += 2
-        if idx in th: slots[idx] = PluginSlot(tk.Label(frame), (keys or {}).get(idx, f"slot_{idx}"))
 
     tk.Button(box, name="update_button").grid(row=row, columnspan=2)
     return box, slots

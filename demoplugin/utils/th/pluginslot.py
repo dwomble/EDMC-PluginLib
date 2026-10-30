@@ -21,8 +21,7 @@ class PluginSlot:
         self.box:tk.Misc = self.frame.master
         # A Tcl var rather than a virtual event: Tk drops events to unmapped windows. It also works across th copies.
         self.frame.setvar(f"th_slot{self.frame}", self.frame.register(self._save))
-        # Later plugins aren't gridded until every plugin_app has returned
-        self.frame.after_idle(self._restore)
+        self.box.after_idle(self._restore)
 
     def move(self, step:int) -> bool:
         """ Move up (step<0) or down (step>0) one slot at a time, then save. """
@@ -66,8 +65,13 @@ class PluginSlot:
         self._place(a, int(b.grid_info()['row']))
         self._place(b, ra)
 
-    def _restore(self) -> None:
+    def _restore(self, tries:int = 50) -> None:
         """ Jump to the saved slot, then put plugins that don't use PluginSlot back in load order. """
+        # Plugins flush idle tasks during plugin_app; EDMC adds its update button once every plugin is gridded
+        if 'update_button' not in self.box.children and tries > 0:
+            self.box.after(100, self._restore, tries - 1)
+            return
+
         slots:list = self._slots()
         target:int = config.get_int(self.key, default=-1)
         if target < 0 or self.frame not in slots: return
