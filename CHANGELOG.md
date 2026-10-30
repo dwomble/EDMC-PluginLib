@@ -5,6 +5,7 @@
 ### Changes
 
 * Added th.Collapsible a class to manage a collapsed and expanded view for a plugin
+* Added th.PluginSlot to enable reordering of plugins
 * Added th.fit_window to refit EDMC's main window to a plugin's content when its size changes, e.g. on collapse or expand
 * The updater no longer checks for updates when the plugin folder is a git checkout
 * Improved the test harness setup and teardown to better handle background threads

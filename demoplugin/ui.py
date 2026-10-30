@@ -68,6 +68,7 @@ class UI:
         self.frame.grid(row=0, column=0, sticky=tk.NSEW)
         self.frame.columnconfigure(0, weight=1)
 
+        # Create a collapsible frame with a collapsed header view and a full view
         self.view:th.Collapsible = th.Collapsible(self.frame, movable=True)
         expanded:th.Frame = self.view.expanded
         collapsed:th.Frame = self.view.collapsed
@@ -76,16 +77,17 @@ class UI:
         expanded.columnconfigure(2, weight=1)
         collapsed.columnconfigure(0, weight=1)
 
-        # Header row
-        row:int = 0
-        title:th.Label = th.Label(expanded, text="PluginLib Demo")
-        title.grid(row=row, column=0, columnspan=2, sticky=tk.W)
-        self.view.button("hide", column=3) # line up with the badges column rather than the default far right
-
+        # Configure the collapsed view
+        title:th.Label = th.Label(collapsed, text="PluginLib Demo")
         fnt:font.Font = font.Font(font=title.cget("font"))
         fnt.configure(weight="bold")
         title.configure(font=fnt)
-        th.Label(collapsed, text="PluginLib Demo", font=fnt).grid(row=0, column=0, sticky=tk.W)
+        title.grid(row=0, column=0, sticky=tk.W)
+
+        # Configure the expanded view for the full plugin
+        row:int = 0
+        th.Label(expanded, text="PluginLib Demo", font=fnt).grid(row=row, column=0, columnspan=2, sticky=tk.W)
+        self.view.button("hide", column=3) # line up with the badges column rather than the default far right
 
         # Dashboard status row: mode, pips, badges
         row += 1
