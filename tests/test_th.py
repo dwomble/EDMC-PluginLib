@@ -409,7 +409,9 @@ class TestCollapsible:
         btn = view.button("hide", text="X", tooltip="Close", row=1, column=4)
         assert btn is view.button("hide")
         assert btn['text'] == "X"
-        assert btn['width'] == 0
+        plain = Button(view.expanded, text="X")
+        btn.update_idletasks()
+        assert (btn.obj.winfo_reqwidth(), btn.alt.winfo_reqwidth()) == (plain.obj.winfo_reqwidth(), plain.alt.winfo_reqwidth())
         assert view._buttons["hide"][1].text == "Close"
         info:dict = btn.grid_info()
         assert (info['row'], info['column'], info['sticky']) == (1, 4, 'ne')
