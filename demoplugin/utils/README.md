@@ -103,11 +103,14 @@ The optional `movable` parameter enables or disables plugin reordering.
 ```python
 view:th.Collapsible = th.Collapsible(frame, movable=True)
 
+# Optional, only needed to alter the show/hide buttons
 view.button('show', translate("Expand"), tooltip=translate("Expand view"))
 view.button('hide', translate("Collapse"), tooltip=translate("Collapse view"))
 
+# Add name, version, whatever, to the collapsed frame
 title:th.Label = th.Label(view.collapsed, text="My Plugin's Name").grid(row=0, column=0, sticky=tk.W)
 
+# All your normal view content goes in the expanded.
 content:th.Label = th.Label(view.expanded, text="This is my plugin's content").grid(row=0, column=0, sticky=tk.W)
 ```
 
