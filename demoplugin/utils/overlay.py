@@ -5,6 +5,7 @@ Handles detection of whichever overlay backend is installed and exposes a small 
 when no overlay is installed or running.
 """
 import inspect
+import threading
 from typing import Any
 
 from .debug import Debug
@@ -23,6 +24,7 @@ class Overlay:
         self.supports_circle:bool = False # a native "circle" send_shape -- pre-release as of this writing
         self._warned:bool = False
         self._consecutive_failures:int = 0
+        self._lock:threading.Lock = threading.Lock() # worker threads can send alongside the main thread
 
         self._detect()
 
@@ -62,7 +64,7 @@ class Overlay:
         """ Send/update a text message. No-op if no overlay is available. """
         if not self.available: return
         try:
-            self._overlay.send_message(id, text, color, x, y, ttl=ttl, size=size)
+            with self._lock: self._overlay.send_message(id, text, color, x, y, ttl=ttl, size=size)
             self._succeed()
         except Exception as e:
             self._fail("send_text", e)
@@ -71,7 +73,7 @@ class Overlay:
         """ Send/update a rectangle or other filled shape. No-op if no overlay is available. """
         if not self.available: return
         try:
-            self._overlay.send_shape(id, shape, border_color, fill_color, x, y, w, h, ttl=ttl)
+            with self._lock: self._overlay.send_shape(id, shape, border_color, fill_color, x, y, w, h, ttl=ttl)
             self._succeed()
         except Exception as e:
             self._fail("send_shape", e)
@@ -80,9 +82,10 @@ class Overlay:
         """ A native filled/outlined circle """
         if not self.available: return
         try:
-            self._overlay.send_shape(
-                id, "circle", color=border_color, fill=fill_color, x=x, y=y, radius=radius, thickness=thickness, ttl=ttl,
-            )
+            with self._lock:
+                self._overlay.send_shape(
+                    id, "circle", color=border_color, fill=fill_color, x=x, y=y, radius=radius, thickness=thickness, ttl=ttl,
+                )
             self._succeed()
         except Exception as e:
             self._fail("send_circle", e)
@@ -91,10 +94,11 @@ class Overlay:
         """ Send/update a vector shape (e.g. a polygon or ring) """
         if not self.available: return
         try:
-            self._overlay.send_raw({
-                "id": id, "shape": "vect", "color": color, "fill": fill_color,
-                "x": 0, "y": 0, "w": 0, "h": 0, "ttl": ttl, "vector": vector,
-            })
+            with self._lock:
+                self._overlay.send_raw({
+                    "id": id, "shape": "vect", "color": color, "fill": fill_color,
+                    "x": 0, "y": 0, "w": 0, "h": 0, "ttl": ttl, "vector": vector,
+                })
             self._succeed()
         except Exception as e:
             self._fail("send_vect", e)
@@ -103,7 +107,7 @@ class Overlay:
         """ Clear a previously sent message/shape by id, if the backend supports it. """
         if not self.available: return
         try:
-            self._overlay.send_message(id, "", "#000000", 0, 0, ttl=1)
+            with self._lock: self._overlay.send_message(id, "", "#000000", 0, 0, ttl=1)
         except Exception as e:
             self._fail("clear", e)
 

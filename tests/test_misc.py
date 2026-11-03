@@ -6,6 +6,12 @@ Run with:
 
 """
 import pytest
+import sys
+import threading
+import tkinter as tk
+from concurrent.futures import ThreadPoolExecutor
+from time import monotonic
+from types import SimpleNamespace
 from typing import Generator
 import json
 
@@ -119,6 +125,61 @@ class TestConfig:
         assert harness.config.get_str('DummyPlugin_strval', default='None') == 'Active'
         harness.config.delete('DummyPlugin_strval')
         assert harness.config.get_str('DummyPlugin_strval', default='None') == 'None'
+
+class TestWaitForThread:
+    """Test waiting on a thread that makes Tk calls."""
+
+    def test_services_tk_calls(self, harness) -> None:
+        """A worker's widget calls complete promptly instead of each waiting out tkinter's 1s main loop timeout."""
+        lbl:tk.Label = tk.Label(harness.parent)
+        done:list = []
+
+        def work() -> None:
+            for i in range(3): lbl.configure(text=str(i))
+            done.append(lbl.cget('text'))
+
+        thread:threading.Thread = threading.Thread(target=work)
+        thread.start()
+        start:float = monotonic()
+
+        assert harness.wait_for_thread(thread, 10) is True
+        assert monotonic() - start < 0.9
+        assert done == ['2']
+
+    def test_returns_false_on_timeout(self, harness) -> None:
+        stop:threading.Event = threading.Event()
+        thread:threading.Thread = threading.Thread(target=stop.wait)
+        thread.start()
+
+        assert harness.wait_for_thread(thread, 0.2) is False
+
+        stop.set()
+        thread.join()
+
+class TestStopLookups:
+    """Test stopping autocompleter lookup pools."""
+
+    def test_stops_loaded_pools(self, harness, monkeypatch) -> None:
+        pool:ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1)
+        mod = SimpleNamespace(Autocompleter=SimpleNamespace(_LOOKUP_EXECUTOR=pool))
+        monkeypatch.setitem(sys.modules, 'fake.th.autocompleter', mod)
+        monkeypatch.setattr(TestHarness, '_lookup_pools', [])
+
+        TestHarness.stop_lookups()
+
+        with pytest.raises(RuntimeError): pool.submit(int)
+
+    def test_keeps_unloaded_pools(self, harness, monkeypatch) -> None:
+        pool:ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1)
+        mod = SimpleNamespace(Autocompleter=SimpleNamespace(_LOOKUP_EXECUTOR=pool))
+        monkeypatch.setitem(sys.modules, 'fake.th.autocompleter', mod)
+        monkeypatch.setattr(TestHarness, '_lookup_pools', [])
+
+        TestHarness.reset_instance()
+        monkeypatch.delitem(sys.modules, 'fake.th.autocompleter')
+        TestHarness.stop_lookups()
+
+        with pytest.raises(RuntimeError): pool.submit(int)
 
 class TestHTTPRequests:
     """Test mock and live HTTP requests."""

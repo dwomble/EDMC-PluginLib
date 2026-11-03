@@ -10,9 +10,12 @@ import zipfile
 from _pytest.tmpdir import tmp_path
 import pytest
 from typing import Generator
+from semantic_version import Version # type: ignore
 
 import tests.edmc.requests as mock_requests
+
 from demoplugin.utils.updater import Updater, read_version_file
+import demoplugin.utils.updater as updater_module
 
 @pytest.fixture(autouse=True)
 def clear_mock_calls() -> Generator[None, None, None]:
@@ -59,6 +62,17 @@ def _make_updater_with_zip(tmp_path, zip_contents:dict[str, str]) -> Updater:
             zf.writestr(name, content)
     updater.zip_downloaded = zip_file
     return updater
+
+class TestUpdaterGitCheckout:
+
+    def test_git_skips_update(self, tmp_path, monkeypatch) -> None:
+        (tmp_path / ".git").mkdir()
+        started:list = []
+        monkeypatch.setattr(updater_module, "Thread", lambda *a, **kw: started.append(kw))
+
+        Updater(str(tmp_path), "dwomble", "EDMC-PluginLib").check_for_update(Version("0.0.0"))
+
+        assert started == [] # no update thread for a dev copy
 
 class TestUpdaterInstall:
     def test_clear_backup(self, tmp_path) -> None:

@@ -14,6 +14,7 @@ from edmc_data import ( # type: ignore
     )
 
 from harness import TestHarness, reset_plugin_modules
+from config import config # type: ignore
 from demoplugin.ui import _MODES, _BADGES
 
 @pytest.fixture
@@ -130,6 +131,38 @@ class TestDashboardUI:
 
         harness.fire_dashboard_event({"Flags": FlagsDocked})
         assert plugin.ui.badges.cget("text") == ""
+
+class TestPanelToggle:
+    def test_toggle_swaps_views(self, harness:TestHarness) -> None:
+        from load import plugin
+        assert plugin.ui is not None
+        view = plugin.ui.view
+        assert (view.expanded.winfo_manager(), view.collapsed.winfo_manager()) == ("grid", "")
+
+        view.toggle()
+        assert (view.expanded.winfo_manager(), view.collapsed.winfo_manager()) == ("", "grid")
+        view.toggle()
+
+    def test_toggle_persists_config(self, harness:TestHarness) -> None:
+        from load import plugin
+        assert plugin.ui is not None
+        key:str = f"{plugin.ui.view.key}_hidden"
+        plugin.ui.view.toggle()
+        try:
+            assert config.get_bool(key) is True
+        finally:
+            plugin.ui.view.toggle()
+        assert config.get_bool(key) is False
+
+    def test_dashboard_updates_while_collapsed(self, harness:TestHarness) -> None:
+        from load import plugin
+        assert plugin.ui is not None
+        plugin.ui.view.toggle()
+        try:
+            harness.fire_dashboard_event({"Flags": FlagsDocked})
+            assert plugin.ui.mode.cget("text") == "Docked"
+        finally:
+            plugin.ui.view.toggle()
 
 class TestJournalUI:
     def test_handles_journal_entry(self, harness:TestHarness) -> None:

@@ -2,6 +2,12 @@
 
 A Library of useful utilities for EDMC plugins.
 
+## Use
+
+It's always advisible to put most of your plugin code in a _uniquely_ named folder to avoid namespace collisions e.g. `<myuniquesubdir>`. Then add whichever libraries you want in a sub-directory of that e.g. `<myuniquesubdir>/utils/`.
+
+If the library is not put in a unique directory you may experience collisions with other plugins using the same functions and objects.
+
 ## Updater and Notifier
 
 A class to check if a new release of the plugin is available, download the zip asset, and install it on exit.
@@ -80,15 +86,46 @@ Note they only support `grid` not `pack` layout and scrollbars are OS native so 
 
 ### Standard tk
 
-* Theme-aware versions of the following standard objects: Frame, LabelFrame, ScrollableFrame, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder
+* Theme-aware versions of the following standard objects: Frame, LabelFrame, ScrollableFrame, Collapsible, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder
 
 ### th.ScrollableFrame
 
 A themed frame whose `.interior` scrolls vertically once its content exceeds `maxheight`, hiding the scrollbar entirely while content fits. Use `.clear()` to replace all of `.interior`'s content in one shot rather than destroying its children individually.
 
+### th.Collapsible
+
+An easy to use expand/collapse (hide/show, activate/deactivate). It creates two user-configurable frames (`.expanded` and `.collapsed`) and swaps them with `.toggle()`. When the view is changed it automatically refits the EDMC window to the new height/width.
+
+The optional `movable` parameter enables or disables plugin reordering.
+
+`button(name:str, text:str|None = None, tooltip:str|None = None, **grid)` can be used to modify the `show`, `hide`, `up` and `down` buttons.
+
+```python
+view:th.Collapsible = th.Collapsible(frame, movable=True)
+
+# Optional, only needed to alter the show/hide buttons
+view.button('show', translate("Expand"), tooltip=translate("Expand view"))
+view.button('hide', translate("Collapse"), tooltip=translate("Collapse view"))
+
+# Add name, version, whatever, to the collapsed frame
+title:th.Label = th.Label(view.collapsed, text="My Plugin's Name").grid(row=0, column=0, sticky=tk.W)
+
+# All your normal view content goes in the expanded.
+content:th.Label = th.Label(view.expanded, text="This is my plugin's content").grid(row=0, column=0, sticky=tk.W)
+```
+
+#### th.fit_window()
+
+If your plugin's window changes size EDMC's main window may not adapt. `th.fit_window(widget)` refits the window to its content. `th.Collapsible` calls this for you, but call it yourself after any other size changes.
+
+```python
+my_frame.grid_forget()
+th.fit_window(plugin_frame)
+```
+
 ### th.Placeholder
 
-An themed tk.Entry class that includes a placeholder value and popup menu.
+A themed tk.Entry class that includes a placeholder value and popup menu.
 
 ```python
 mymenu:dict = {
@@ -100,7 +137,7 @@ my_field:th.Placeholder = th.Placeholder(frame, "Placeholder text", menu=mymenu)
 
 ### th.Autocompleter
 
-An themed tk.Entry class that supports placeholder text and a callback function to provide autocomplete functionality.
+A themed tk.Entry class that supports placeholder text and a callback function to provide autocomplete functionality.
 
 ```python
 def callback(inp:str) -> list:
@@ -162,7 +199,7 @@ a thin wrapper that detects whichever overlay backend is installed (classic `EDM
 
 ### Date utilities
 
-(python-dateutil)<https://github.com/dateutil/dateutil> modified to run in and EDMC plugin. Provides powerful date parsing and delta functions.
+[python-dateutil](https://github.com/dateutil/dateutil) modified to run in and EDMC plugin. Provides powerful date parsing and delta functions.
 
 ```python
 from utils.dateutil.parser import parse
@@ -170,7 +207,7 @@ from utils.dateutil.parser import parse
 date = parse(string)
 ```
 
-See [https://dateutil.readthedocs.io/en/stable/index.html] for detailed documentation.
+See [https://dateutil.readthedocs.io/en/stable/index.html](https://dateutil.readthedocs.io/en/stable/index.html) for detailed documentation.
 
 ### Clipboard copy
 
