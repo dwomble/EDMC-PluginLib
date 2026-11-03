@@ -6,6 +6,7 @@ The library has four components.
 
 1. Demo plugin
 1. A unit testing tool
+1. A library of display objects
 1. A library of useful utility classes and functions
 1. Some handy github workflows
 
@@ -36,16 +37,35 @@ You can use `pytest` without it to run many functions but this provides a mocked
 * Mock (or live) HTTPS requests
 * Mock dashboard event replay
 
+## Display objects
+
+These fall into two main groups. The `th` library contains are objects that self-register with EDMC to match the current theme including use of the EDMC Windows Default theme. When the theme is changed they automatically change with it. There are variants of standard ttk/tk objects and more advanced objects that are useful to plugins. The second group are modified versions of non-standard tk objects.
+
+### th
+
+Advanced objects:
+
+* `Collapsible` – An object that enables collapsed/exapanded views and handles switching between them. It also supports plugin reordering.
+* `ScrollableFrame` – A frame that automatically displays or hides a scrollbar depending on whether the content exceeds its configured configured maximum height.
+* `RichLabel`, `RichText` and `RichScrolledText` – versions of Label, Text and ScrolledText objects capable of natively displaying Markdown or HTML content.
+* `Tooltip` – a mouseover tooltip object
+* `Placeholder` – An Entry object that can display a placeholder value
+* `Autocompleter` – An Entry object derived from `Placeholder` that will display a dropdown list of autocomplete options returned from a callback.
+
+Standard objects: `Frame`, `LabelFrame`, `Label`, `Entry`, `Text`, `Button`, `Radiobutton`, `ComboBox`, `Listbox`, `Checkbutton`, `Scale`, `Spinbox`
+
+### Non-standard objects
+
+* Richtext tk objects (standalone version of the `RichLabel`, `RichText` and `RichScrolledText`)
+* Enhanced Treeview
+* Scrollable notebook
+
 ## Utility classes and functions
 
 A Library of utilities for EDMC plugins. Some utilities are drop-in ready to go, some may require some configuration, and others may need adapting to your plugin. They have comments or README's describing their functionality.
 
 ### Features
 
-* An EDMC-theme aware library of UI objects for use in the main EDMC window (Frame, LabelFrame, ScrollableFrame, Collapsible, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder)
-* Richtext tk objects (easily display HTML and Markdown)
-* Enhanced Treeview
-* Scrollable notebook
 * Debug
 * Plugin updater
 * Notifications capability
