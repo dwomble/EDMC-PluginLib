@@ -6,6 +6,7 @@ The library has four components.
 
 1. Demo plugin
 1. A unit testing tool
+1. A library of display objects
 1. A library of useful utility classes and functions
 1. Some handy github workflows
 
@@ -17,14 +18,14 @@ Created as a platform to test and exercise the library functionality it also act
 
 A unit and regression testing tool for EDMC that mocks EDMC functionality enabling `pytest`, python debugger, and `pycov` test coverage analyses.
 
-You can use `pytest` without it to run many functions but this provides a mocked up EDMC environment so you can run realistic scenarios including replaying journal events.
+You can use `pytest` without it to run individual functions but complex sequences and interactions with EDMC (journal events, dashboard events, config options etc.) are much harder to test. Also interacting with external tools may make irrevocable changes.
 
-![Debugging a plugin](https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f)
-![Code test coverage](https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f)
+This harness provides a mocked up EDMC environment so you can run realistic scenarios including replaying journal and dashboard events, reading and writing HTTP requests, etc. starting from a known, repeatable state and without making irrevocable changes.
 
 ### Features
 
-* Journal event replay, with customization
+* Mock journal event replay
+* Mock dashboard event replay
 * Mock state handling
 * Mock EDMC config
 * Mock ED logging
@@ -34,7 +35,34 @@ You can use `pytest` without it to run many functions but this provides a mocked
 * Mock EDMC Overlay
 * Mock HotKeys
 * Mock (or live) HTTPS requests
-* Mock dashboard event replay
+
+![Debugging a plugin](https://github.com/user-attachments/assets/bf475976-b5aa-4efa-bf60-539893eceb1f)
+![Code test coverage](https://github.com/user-attachments/assets/21d05913-a93c-48fa-b600-f6d67fa33f9f)
+
+## Display objects
+
+These fall into two main groups. The `th` library contains are objects that self-register with EDMC to match the current theme including use of the EDMC Windows Default theme. When the theme is changed they automatically change with it. There are variants of standard ttk/tk objects and more advanced objects that are useful to plugins. The second group are modified versions of additional (non-standard) tk objects.
+
+### th EDMC UI Library
+
+Advanced objects:
+
+* `Collapsible` – An object that enables collapsed/exapanded views and handles switching between them. It also supports plugin reordering.
+* `ScrollableFrame` – A frame that automatically displays or hides a scrollbar depending on whether the content exceeds its configured configured maximum height.
+* `RichLabel`, `RichText` and `RichScrolledText` – versions of Label, Text and ScrolledText objects capable of natively displaying Markdown or HTML content.
+* `Tooltip` – a mouseover tooltip object
+* `Placeholder` – An Entry object that can display a placeholder value
+* `Autocompleter` – An Entry object derived from `Placeholder` that will display a dropdown list of autocomplete options returned from a callback.
+
+Standard objects: `Frame`, `LabelFrame`, `Label`, `Entry`, `Text`, `Button`, `Radiobutton`, `ComboBox`, `Listbox`, `Checkbutton`, `Scale`, `Spinbox`
+
+### Additional objects
+
+Larger objects typically used in popup windows rather than the EDMC main frame.
+
+* Richtext tk objects (standalone version of the `RichLabel`, `RichText` and `RichScrolledText`)
+* Enhanced Treeview
+* Scrollable notebook
 
 ## Utility classes and functions
 
@@ -42,10 +70,6 @@ A Library of utilities for EDMC plugins. Some utilities are drop-in ready to go,
 
 ### Features
 
-* An EDMC-theme aware library of UI objects for use in the main EDMC window (Frame, LabelFrame, ScrollableFrame, Label, Entry, Text, RichLabel, RichText, RichScrolledText, Button, Radiobutton, ComboBox, Listbox, Checkbutton, Scale, Spinbox, Tooltip, Autocompleter, Placeholder)
-* Richtext tk objects (easily display HTML and Markdown)
-* Enhanced Treeview
-* Scrollable notebook
 * Debug
 * Plugin updater
 * Notifications capability

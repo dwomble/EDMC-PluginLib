@@ -5,16 +5,12 @@ from datetime import datetime, timezone
 import tkinter as tk
 from tkinter import font
 
-from config import config # type: ignore
 import edmc_data as ed # type: ignore
 
 import demoplugin.utils.th as th
 
 MAX_HEIGHT:int = 100 # Pixels
 BADGE_COLOR:str = "orange" # reads well in both light and dark theme
-PANEL_ENABLED:str = f"PluginLib-PanelEnabled"
-PANEL_SHOWN_GLYPH:str = "\U0001F648" # see-no-evil monkey -- "pause" analog while visible
-PANEL_HIDDEN_GLYPH:str = "\U0001F441" # eye -- "play" analog while hidden
 
 JOURNAL_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 DISP_FORMAT = "%m-%d %H:%M:%S"
@@ -68,86 +64,55 @@ class UI:
     """
 
     def __init__(self, parent:tk.Frame):
-        self._panel_enabled:bool = config.get_bool(PANEL_ENABLED, default=True)
-
-
         self.frame:th.Frame = th.Frame(parent)
         self.frame.grid(row=0, column=0, sticky=tk.NSEW)
         self.frame.columnconfigure(0, weight=1)
 
-        # Header row
-        self.header:th.Frame = th.Frame(self.frame)
-        self.header.grid(row=0, column=0, sticky=tk.NSEW)
-        self.header.columnconfigure(0, weight=1)
-        self.header.columnconfigure(1, weight=1)
-        self.header.columnconfigure(2, weight=1)
+        # Create a collapsible frame with a collapsed header view and a full view
+        self.view:th.Collapsible = th.Collapsible(self.frame, movable=True)
+        expanded:th.Frame = self.view.expanded
+        collapsed:th.Frame = self.view.collapsed
+        expanded.columnconfigure(0, weight=1)
+        expanded.columnconfigure(1, weight=1)
+        expanded.columnconfigure(2, weight=1)
+        collapsed.columnconfigure(0, weight=1)
 
-        row:int = 0
-        title:th.Label = th.Label(self.header, text="PluginLib Demo")
-        title.grid(row=0, column=0, columnspan=3, sticky=tk.W)
-        self.toggle_button:th.Button = th.Button(self.header, text=self._toggle_glyph(), width=3, command=self._toggle_panel)
-        self.toggle_button.grid(row=row, column=3, sticky=tk.E)
-
-        raw = title.cget("font")
-        fnt:font.Font = font.Font(font=raw)
+        # Configure the collapsed view
+        title:th.Label = th.Label(collapsed, text="PluginLib Demo")
+        fnt:font.Font = font.Font(font=title.cget("font"))
         fnt.configure(weight="bold")
         title.configure(font=fnt)
+        title.grid(row=0, column=0, sticky=tk.W)
+
+        # Configure the expanded view for the full plugin
+        row:int = 0
+        th.Label(expanded, text="PluginLib Demo", font=fnt).grid(row=row, column=0, columnspan=2, sticky=tk.W)
+        self.view.button("hide", column=3) # line up with the badges column rather than the default far right
+
         # Dashboard status row: mode, pips, badges
         row += 1
-        self.mode:th.Button = th.Button(self.header, text="", width=13)
+        self.mode:th.Button = th.Button(expanded, text="", width=13)
         th.Tooltip(self.mode, "Mode flags")
         self.mode.grid(row=row, column=0, padx=(0, 2), sticky=tk.W)
-        self.gui:th.Button = th.Button(self.header, text="", width=13)
+        self.gui:th.Button = th.Button(expanded, text="", width=13)
         th.Tooltip(self.gui, "GUI Focus")
         self.gui.grid(row=row, column=1, padx=2, sticky=tk.W)
-        self.pips:th.Button = th.Button(self.header, text="", width=13)
+        self.pips:th.Button = th.Button(expanded, text="", width=13)
         th.Tooltip(self.pips, "Pips")
         self.pips.grid(row=row, column=2, padx=2, sticky=tk.W)
-        self.badges:th.Button = th.Button(self.header, text="", width=13)
+        self.badges:th.Button = th.Button(expanded, text="", width=13)
         th.Tooltip(self.badges, "Warning flags")
         self.badges.grid(row=row, column=3, padx=(2, 0), sticky=tk.W)
 
         # Scrollable display frame
         row += 1
-        self.panel:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=MAX_HEIGHT)
-        self.panel.grid(row=row, column=0,  columnspan=3, sticky=tk.EW)
+        self.panel:th.ScrollableFrame = th.ScrollableFrame(expanded, maxheight=MAX_HEIGHT)
+        self.panel.grid(row=row, column=0, columnspan=4, sticky=tk.EW)
         self.panel.interior.columnconfigure(0, weight=1)
 
         # Content of the scrollable frame
         self.content:th.Text = th.Text(self.panel.interior, wrap=tk.WORD)
         self.content.grid(row=0, column=0)
-
-        if self._panel_enabled:
-            return
-
-        # Hide the panel
-        parent.after(100, lambda: self._toggle_panel(False))
-
-
-    def _toggle_panel(self, show:bool|None = None) -> None:
-        """ Shows/hides content; collection keeps going. """
-        self._panel_enabled = not self._panel_enabled
-        if show != None:
-            self._panel_enabled = show
-        config.set(PANEL_ENABLED, self._panel_enabled)
-
-        self.toggle_button.configure(text=self._toggle_glyph())
-        if self._panel_enabled:
-            self.mode.grid(row=1, column=0, padx=(0, 2), sticky=tk.W)
-            self.gui.grid(row=1, column=1, padx=2, sticky=tk.W)
-            self.pips.grid(row=1, column=2, padx=2, sticky=tk.W)
-            self.badges.grid(row=1, column=3, padx=(2, 0), sticky=tk.W)
-            self.panel.grid(row=2, column=0, sticky=tk.EW)
-            return
-
-        self.mode.grid_forget()
-        self.gui.grid_forget()
-        self.pips.grid_forget()
-        self.badges.grid_forget()
-        self.panel.grid_forget()
-
-    def _toggle_glyph(self) -> str:
-        return PANEL_SHOWN_GLYPH if self._panel_enabled else PANEL_HIDDEN_GLYPH
 
     def add_entry(self, event:dict) -> None:
         """ Add a new entry to the scrollable frame. """
