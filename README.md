@@ -14,6 +14,10 @@ The library has four components.
 
 Created as a platform to test and exercise the library functionality it also acts as a simple plugin template and displays a journal event list and a lightweight status mode/pips/alert-badge summary.
 
+![Demo Plugin Collapsed](https://github.com/user-attachments/assets/1f02d9af-0dbc-423d-93be-d2f94bdffeeb)
+
+![Demo Plugin Expanded](https://github.com/user-attachments/assets/8f7ae23b-d8ab-4871-b580-c34d3f688969)
+
 ## Testing
 
 A unit and regression testing tool for EDMC that mocks EDMC functionality enabling `pytest`, python debugger, and `pycov` test coverage analyses.
