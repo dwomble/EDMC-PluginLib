@@ -2,10 +2,10 @@
 
 Bringing EDMC plugin development out of the dark ages. 😜
 
-The library has four components.
+The library has several components.
 
-1. Demo plugin
-1. A unit testing tool
+1. A Demo plugin
+1. A unit testing tool that mocks EDMC
 1. A library of display objects
 1. A library of useful utility classes and functions
 1. Some handy github workflows
