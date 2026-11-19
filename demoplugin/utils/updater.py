@@ -6,6 +6,7 @@ import shutil
 import zipfile
 import time
 from threading import Thread
+from typing import Callable
 from semantic_version import Version # type: ignore
 
 from config import config, user_agent # type: ignore
@@ -42,7 +43,9 @@ class Updater():
       gh_owner is the github owner/org, e.g. "coder"
       gh_project is the github project name, e.g. "my-plugin"
       gh_release_info is the github api url for release info, e.g. "https://api.github.com/repos/coder/my-plugin/releases/latest"
-    Call check_for_update(version) at plugin startup. It's asynchronous.
+    Call check_for_update(version, extra) at plugin startup. It's asynchronous.
+      'extra' is an optional callable run on the same schedule, e.g. to refresh data files.
+    Set accept_prerelease to True to also offer pre-release versions.
     Call install(preserve) to install the update when you choose (commonly on shutdown).
       'preserve' is a list of directories that shouldn't be deleted.
     """
@@ -54,6 +57,7 @@ class Updater():
         self.gh_release_info:str = gh_release_info
         if self.gh_release_info == '':
             self.gh_release_info = f'https://api.github.com/repos/{self.gh_owner}/{self.gh_project}/releases/latest'
+        self.accept_prerelease:bool = False # Should pre-release versions be accepted?
 
         self.update_available:bool = False # Is there an update available?
         self.install_update:bool = False # Should it be installed?
@@ -124,17 +128,22 @@ class Updater():
     def get_release(self) -> bool:
         """ Get info about the latest release from github, version, changelog, and download url """
         try:
-            Debug.logger.debug(f"Requesting {self.gh_release_info}")
+            # /latest never returns a pre-release, so list them all instead
+            url:str = self.gh_release_info.removesuffix('/latest') if self.accept_prerelease else self.gh_release_info
+            Debug.logger.debug(f"Requesting {url}")
             session:requests.Session = new_session(timeout=TIMEOUT)
-            r:requests.Response = session.get(self.gh_release_info, headers=_headers(self.gh_project), timeout=TIMEOUT)
+            r:requests.Response = session.get(url, headers=_headers(self.gh_project), timeout=TIMEOUT)
             r.raise_for_status()
         except requests.RequestException as e:
             Debug.logger.error("Failed to get changelog, exception info:", exc_info=e)
             self.install_update = False
             return False
 
-        version_data:dict = json.loads(r.content)
-        if version_data['draft'] == True or version_data['prerelease'] == True:
+        version_data:dict|list = json.loads(r.content)
+        if isinstance(version_data, list):
+            # Newest release whose tag is a version, skipping data releases such as star-data
+            version_data = dict(next((v for v in version_data if re.match(r'v?\d', v.get('tag_name', ''))), {'draft': True}))
+        if version_data['draft'] == True or (version_data['prerelease'] == True and not self.accept_prerelease):
             Debug.logger.info("Latest server version is draft or pre-release, ignoring")
             return False
 
@@ -161,8 +170,13 @@ class Updater():
         return True
 
 
-    def _check_update(self, version:Version|str) -> None:
-        """ Compare the current version file with github version """
+    def _check_update(self, version:Version|str, extra:Callable|None = None) -> None:
+        """ Compare the current version file with github version, then run any extra check """
+        if extra: Thread(target=extra, name=f"{self.gh_project} extra update check", daemon=True).start()
+        if os.path.exists(os.path.join(self.plugin_dir, ".git")): # a git checkout is a dev copy, never self-update it
+            Debug.logger.info(f"{self.gh_project} is a git checkout, not checking for updates")
+            return
+
         try:
             if isinstance(version, str): version = Version.coerce(version)
             Debug.logger.debug(f"Checking for update")
@@ -179,18 +193,14 @@ class Updater():
             Debug.logger.error("Failed to check for updates, exception info:", exc_info=e)
 
 
-    def check_for_update(self, version:Version|str, interval:int = CHECK_INTERVAL) -> None:
-        """ Start an update check thread. """
-        if os.path.exists(os.path.join(self.plugin_dir, ".git")): # a git checkout is a dev copy, never self-update it
-            Debug.logger.info(f"{self.gh_project} is a git checkout, not checking for updates")
-            return
-
+    def check_for_update(self, version:Version|str, interval:int = CHECK_INTERVAL, extra:Callable|None = None) -> None:
+        """ Start an update check thread; extra runs on the same schedule, even in a git checkout. """
         last:int = config.get_int(f"{self.gh_project}_last_update_check", 0)
         if last >= int(time.time()) - interval:
             return
 
         config.set(f"{self.gh_project}_last_update_check", int(time.time()))
-        thread:Thread = Thread(target=self._check_update, args=[version], name=f"{self.gh_project} update checker")
+        thread:Thread = Thread(target=self._check_update, args=[version, extra], name=f"{self.gh_project} update checker")
         thread.start()
 
 class Notices():

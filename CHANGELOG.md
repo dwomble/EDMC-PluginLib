@@ -4,28 +4,32 @@
 
 ### New Features
 
-* Added th.Collapsible a class to manage a collapsed and expanded view for a plugin and plugin order management.
-* Added th.PluginSlot to handle plugin reordering
-* Added th.fit_window to refit EDMC's main window to a plugin's content when its size changes, e.g. on collapse or expand
+* Plugin reordering and collapsed view
+  * New `th.PluginSlot` to handle plugin reordering
+  * New `th.Collapsible` a class to manage a collapsed and expanded view for a plugin and plugin order management.
+  * New `th.fit_window` to refit EDMC's main window to a plugin's content when its size changes, e.g. on collapse or expand
+* Updater improvements
+  * Added an extra hook to teh updater to support retrieval of other data
+  * Optionally download pre-releases (pre-releases are still ignored by default)
+  * No longer checks for updates when the plugin folder is a git checkout
 
 ### Changes
 
-* The updater no longer checks for updates when the plugin folder is a git checkout
 * Improved the test harness setup and teardown to better handle background threads
 
 ## v0.3.0 2026-10-01
 
 ### New Features
 
-* Added th.Separator
+* Added `th.Separator`
 * Added a scrollable frame that grows with content upto `maxheight` and then displays a scrollbar
 * Added mock outfitting
 
 ### Changes
 
 * Updated Github VirusTotal action to v2
-* Improved th.Button's function and tk compatibility
-* Added text property to th.Tooltip for better compatibility
+* Improved `th.Button`'s function and tk compatibility
+* Added text property to `th.Tooltip` for better compatibility
 * Updated documentation
 
 ## v0.2.0 2026-08-28
@@ -34,7 +38,7 @@
 
 * Made the demo plugin do something slightly useful: a lightweight status mode/pips/alert-badge summary and journal event list
 
-* Added an EDMC theme-aware ttk/tk object library (th) including:
+* Added an EDMC theme-aware ttk/tk object library (`th`) including:
   * TopLevel
   * Frame
   * LabelFrame
@@ -57,7 +61,7 @@
 * The updater now has a configurable re-check frequency limit
 * The updater cleans (backs-up) the plugin code before updating
 * Added richtext support to tooltips
-* Added mock get_bool and get_list config methods
+* Added mock `get_bool` and `get_list` config methods
 * Added mock EDMC-Hotkeys support
 * Added enable/disable overlay test support
 * Improved l10n mock support

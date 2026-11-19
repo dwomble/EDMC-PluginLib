@@ -63,16 +63,57 @@ def _make_updater_with_zip(tmp_path, zip_contents:dict[str, str]) -> Updater:
     updater.zip_downloaded = zip_file
     return updater
 
+class _SyncThread:
+    """ Runs the target on start(), so a test sees its effects immediately. """
+    def __init__(self, target, args=(), **kw) -> None:
+        self.target, self.args = target, args
+
+    def start(self) -> None:
+        self.target(*self.args)
+
 class TestUpdaterGitCheckout:
 
     def test_git_skips_update(self, tmp_path, monkeypatch) -> None:
         (tmp_path / ".git").mkdir()
-        started:list = []
-        monkeypatch.setattr(updater_module, "Thread", lambda *a, **kw: started.append(kw))
+        monkeypatch.setattr(updater_module, "Thread", _SyncThread)
+        updater = Updater(str(tmp_path), "dwomble", "PluginLib-git-skip")
+        monkeypatch.setattr(updater, "get_release", lambda: pytest.fail("a dev copy queried GitHub"))
 
-        Updater(str(tmp_path), "dwomble", "EDMC-PluginLib").check_for_update(Version("0.0.0"))
+        updater.check_for_update(Version("0.0.0"))
 
-        assert started == [] # no update thread for a dev copy
+        assert not updater.update_available
+
+    def test_git_still_runs_extra(self, tmp_path, monkeypatch) -> None:
+        (tmp_path / ".git").mkdir()
+        monkeypatch.setattr(updater_module, "Thread", _SyncThread)
+        ran:list = []
+
+        Updater(str(tmp_path), "dwomble", "PluginLib-git-extra").check_for_update(Version("0.0.0"), extra=lambda: ran.append(1))
+
+        assert ran == [1]
+
+class TestUpdaterExtra:
+
+    def test_extra_runs_with_check(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setattr(updater_module, "Thread", _SyncThread)
+        updater = Updater(str(tmp_path), "dwomble", "PluginLib-extra-runs")
+        monkeypatch.setattr(updater, "get_release", lambda: False)
+        ran:list = []
+
+        updater.check_for_update(Version("0.0.0"), extra=lambda: ran.append(1))
+
+        assert ran == [1]
+
+    def test_extra_throttled_with_check(self, tmp_path, monkeypatch) -> None:
+        monkeypatch.setattr(updater_module, "Thread", _SyncThread)
+        updater = Updater(str(tmp_path), "dwomble", "PluginLib-extra-throttle")
+        monkeypatch.setattr(updater, "get_release", lambda: False)
+        ran:list = []
+
+        updater.check_for_update(Version("0.0.0"), extra=lambda: ran.append(1))
+        updater.check_for_update(Version("0.0.0"), extra=lambda: ran.append(2))
+
+        assert ran == [1] # second call is inside the interval
 
 class TestUpdaterInstall:
     def test_clear_backup(self, tmp_path) -> None:
@@ -111,6 +152,53 @@ class TestUpdaterInstall:
         assert (tmp_path / "data" / "state.json").read_text() == '{"cmdr": "test"}'
         assert not (tmp_path / "updates" / "backup" / "data").exists()
         assert (tmp_path / "updates" / zip_name).exists()
+
+RELEASES:str = "https://api.github.com/repos/dwomble/EDMC-DummyPlugin/releases"
+
+def _release(tag:str, prerelease:bool = False) -> dict:
+    return {'tag_name': tag, 'draft': False, 'prerelease': prerelease, 'body': '',
+            'assets': [{'browser_download_url': f"https://example.invalid/{tag}.zip"}]}
+
+class TestUpdaterPrerelease:
+
+    def test_default_queries_latest(self, tmp_path) -> None:
+        updater:Updater = Updater(str(tmp_path), "dwomble", "EDMC-DummyPlugin")
+        mock_requests.queue_response("get", mock_requests.MockResponse(json_data=_release("v1.2.0")), url=f"{RELEASES}/latest")
+
+        assert updater.get_release()
+        assert updater.update_version == Version("1.2.0")
+
+    def test_default_ignores_prerelease(self, tmp_path) -> None:
+        updater:Updater = Updater(str(tmp_path), "dwomble", "EDMC-DummyPlugin")
+        mock_requests.queue_response("get", mock_requests.MockResponse(json_data=_release("v1.3.0-beta", True)), url=f"{RELEASES}/latest")
+
+        assert not updater.get_release()
+
+    def test_accepts_newest_prerelease(self, tmp_path) -> None:
+        updater:Updater = Updater(str(tmp_path), "dwomble", "EDMC-DummyPlugin")
+        updater.accept_prerelease = True
+        releases:list = [_release("v1.3.0-beta", True), _release("v1.2.0")]
+        mock_requests.queue_response("get", mock_requests.MockResponse(json_data=releases), url=RELEASES)
+
+        assert updater.get_release()
+        assert updater.update_version == Version("1.3.0-beta")
+        assert updater.download_url == "https://example.invalid/v1.3.0-beta.zip"
+
+    def test_skips_data_releases(self, tmp_path) -> None:
+        updater:Updater = Updater(str(tmp_path), "dwomble", "EDMC-DummyPlugin")
+        updater.accept_prerelease = True
+        releases:list = [_release("star-data-v2"), _release("v1.2.0")]
+        mock_requests.queue_response("get", mock_requests.MockResponse(json_data=releases), url=RELEASES)
+
+        assert updater.get_release()
+        assert updater.update_version == Version("1.2.0")
+
+    def test_no_version_tags(self, tmp_path) -> None:
+        updater:Updater = Updater(str(tmp_path), "dwomble", "EDMC-DummyPlugin")
+        updater.accept_prerelease = True
+        mock_requests.queue_response("get", mock_requests.MockResponse(json_data=[_release("star-data-v2")]), url=RELEASES)
+
+        assert not updater.get_release()
 
 class TestReadVersionFile:
     def test_read_version_file(self, tmp_path) -> None:
