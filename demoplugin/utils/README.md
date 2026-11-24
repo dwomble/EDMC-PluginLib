@@ -96,7 +96,7 @@ A themed frame whose `.interior` scrolls vertically once its content exceeds `ma
 
 An easy to use expand/collapse (hide/show, activate/deactivate). It creates two user-configurable frames (`.expanded` and `.collapsed`) and swaps them with `.toggle()`. When the view is changed it automatically refits the EDMC window to the new height/width.
 
-The optional `movable` parameter enables or disables plugin reordering.
+The optional `movable` parameter enables or disables plugin reordering. Reordering works across restarts and has no impact on other plugins (other than their relative position is altered). A click on `up` moves the plugin's frame up one, and `down` down one. On restart the frame retains that relative location.
 
 `button(name:str, text:str|None = None, tooltip:str|None = None, **grid)` can be used to modify the `show`, `hide`, `up` and `down` buttons.
 
