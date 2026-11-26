@@ -10,6 +10,7 @@
         "tests/edmc/monitor.py",
         "tests/edmc/companion.py",
         "tests/edmc/ttkHyperlinkLabel.py",
-        "tests/edmc/util_ships.py"
+        "tests/edmc/util_ships.py",
+        ".venv"
     ]
 }
